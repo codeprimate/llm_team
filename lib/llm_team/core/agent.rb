@@ -35,6 +35,9 @@ module LlmTeam
         @conversation = Conversation.new(history_behavior: history_behavior)
         @total_latency_ms = 0
         @llm_calls_count = 0
+        
+        # Always auto-load auxiliary agents
+        load_auxiliary_agents
       end
 
       # Dynamic system prompt resolution - subclasses can define SYSTEM_PROMPT constant
@@ -356,6 +359,67 @@ module LlmTeam
       # Latency formatting helper (ms to seconds)
       def format_latency(latency_ms)
         "#{(latency_ms / 1000.0).round(1)}s"
+      end
+
+      private
+
+      # Load auxiliary agents from configured path
+      def load_auxiliary_agents
+        config = LlmTeam.configuration
+        return unless config.auxiliary_agents_path
+        
+        auxiliary_agents_path = File.expand_path(config.auxiliary_agents_path)
+        return unless Dir.exist?(auxiliary_agents_path)
+        
+        load_auxiliary_agents_from_path(auxiliary_agents_path)
+      end
+
+      # Scan directory and load all auxiliary agent files
+      def load_auxiliary_agents_from_path(path)
+        puts "🔍 Loading auxiliary agents from: #{path}".blue
+        
+        Dir.glob(File.join(path, "**", "*_agent.rb")).each do |file|
+          load_auxiliary_agent_file(file)
+        end
+      end
+
+      # Load and register a single auxiliary agent file
+      def load_auxiliary_agent_file(file)
+        begin
+          require file
+          
+          # Extract class name from file path
+          # e.g., "web_search_agent.rb" -> "WebSearchAgent"
+          relative_path = file.gsub(/.*\//, "").gsub(/\.rb$/, "")
+          class_name = relative_path.split("_").map(&:capitalize).join
+          
+          # Full namespace: LlmTeam::Agents::Auxiliary::{ClassName}
+          full_class_name = "LlmTeam::Agents::Auxiliary::#{class_name}"
+          
+          agent_class = Object.const_get(full_class_name)
+          
+          if validate_auxiliary_agent_class(agent_class)
+            tool_name = agent_class.tool_schema[:function][:name].to_sym
+            agent_instance = agent_class.new(model: @model)
+            register_tool(tool_name, agent_instance)
+            
+            puts "✅ Loaded auxiliary agent: #{tool_name} (#{class_name})".green
+          end
+          
+        rescue => e
+          puts "⚠️  Failed to load #{File.basename(file)}: #{e.message}".yellow
+        end
+      end
+
+      # Validate that the loaded class is a proper auxiliary agent
+      def validate_auxiliary_agent_class(agent_class)
+        return false unless agent_class < LlmTeam::Core::Agent
+        return false unless agent_class.respond_to?(:tool_schema)
+        return false unless agent_class.tool_schema.is_a?(Hash)
+        return false unless agent_class.tool_schema.dig(:function, :name)
+        true
+      rescue
+        false
       end
     end
   end

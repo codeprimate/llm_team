@@ -11,7 +11,7 @@ module LlmTeam
     attr_accessor :temperature, :max_tokens
 
     # Agent Configuration
-    attr_accessor :default_history_behavior, :auxiliary_agents
+    attr_accessor :default_history_behavior, :auxiliary_agents, :auxiliary_agents_path
 
     # Performance Configuration
     attr_accessor :max_retries, :retry_delay, :timeout
@@ -33,6 +33,8 @@ module LlmTeam
       # Agent Configuration
       @default_history_behavior = (ENV["LLM_TEAM_HISTORY_BEHAVIOR"] || "none").to_sym
       @auxiliary_agents = []
+      @auxiliary_agents_path = ENV["LLM_TEAM_AUXILIARY_AGENTS_PATH"] # or path relative to the current file
+      @auxiliary_agents_path = File.join(File.dirname(__FILE__), "agents", "auxiliary") if @auxiliary_agents_path.nil? || @auxiliary_agents_path.empty?
 
       # Performance Configuration
       @max_retries = (ENV["LLM_TEAM_MAX_RETRIES"] || "3").to_i
@@ -100,6 +102,7 @@ module LlmTeam
         max_tokens: @max_tokens,
         default_history_behavior: @default_history_behavior,
         auxiliary_agents: @auxiliary_agents.dup,
+        auxiliary_agents_path: @auxiliary_agents_path,
         max_retries: @max_retries,
         retry_delay: @retry_delay,
         timeout: @timeout,

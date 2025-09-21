@@ -194,6 +194,13 @@ module LlmTeam
               puts "❌ Invalid history behavior: #{behavior}. Must be none, last, or full".red
               exit 1
             end
+          when "--agents-path"
+            path = args.shift
+            if path.nil?
+              puts "❌ --agents-path requires a path".red
+              exit 1
+            end
+            LlmTeam.configuration.auxiliary_agents_path = path
           when "--verbose"
             @options[:verbose] = true
           when "--query", "-q"
@@ -235,6 +242,7 @@ module LlmTeam
             -i, --max-iterations N  Set maximum iterations (default: 20)
             -m, --model MODEL       Set LLM model (default: deepseek/deepseek-chat-v3.1)
             -H, --history BEHAVIOR  Set history behavior: none, last, full (default: last)
+            --agents-path PATH      Set path for auxiliary agents
             --verbose               Enable verbose output
             -q, --query QUERY       Run in non-interactive mode with single query
 
@@ -244,9 +252,11 @@ module LlmTeam
             llm_team -q "Explain quantum computing"     # Single query mode
             llm_team -i 10 -H full                     # Custom iterations and history
             llm_team --model "gpt-4" --verbose         # Custom model with verbose output
+            llm_team --agents-path ./my_agents         # Load auxiliary agents from directory
 
           Environment Variables:
-            OPENROUTER_API_KEY      Your OpenRouter API key (required)
+            OPENROUTER_API_KEY               Your OpenRouter API key (required)
+            LLM_TEAM_AUXILIARY_AGENTS_PATH   Default path for auxiliary agents
 
           Interactive Commands:
             exit, quit, q           Exit the application
