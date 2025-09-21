@@ -27,6 +27,10 @@ module LlmTeam
           When specific focus areas are mentioned, prioritize those aspects in your research.
         PROMPT
 
+        TOOL_PROMPT = <<~PROMPT
+          - [RESEARCH TOOL] `execute_research(topic, original_user_request, research_type, grounding_context)`: Gather information on a given topic with contextual guidance.
+        PROMPT
+
         def initialize(history_behavior: :none, model: nil)
           super("ResearchAgent", history_behavior: history_behavior, model: model)
         end

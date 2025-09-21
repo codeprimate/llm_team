@@ -34,6 +34,10 @@ module LlmTeam
           and directly answers the user's request based on the provided agent outputs.
         PROMPT
 
+        TOOL_PROMPT = <<~PROMPT
+          - [PRESENTATION/SYNTHESIS TOOL] `synthesize_response(original_query, agent_results)`: Synthesize information from various agents into a final, coherent answer.
+        PROMPT
+
         def initialize(history_behavior: :none, model: nil)
           super("PresenterAgent", history_behavior: history_behavior, model: model)
         end

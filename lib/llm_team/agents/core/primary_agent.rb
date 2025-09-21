@@ -60,9 +60,13 @@ module LlmTeam
 
           TOOL USAGE:
           - Research tools: Gather information on topics or specific areas identified by the critic
-          - Presenter tool: Synthesize information into coherent responses
-          - Critic tool: Review responses and determine if more work is needed
+          - Presenter tools: Synthesize information into coherent responses
+          - Critic tools: Review responses and determine if more work is needed
           - Never use tools outside of this decision tree workflow
+        PROMPT
+
+        TOOL_PROMPT = <<~PROMPT
+          - [PRIMARY AGENT TOOL] `respond(user_query)`: Respond to a user query.
         PROMPT
 
         def initialize(history_behavior: :last, max_iterations: 10, model: nil)
@@ -112,22 +116,20 @@ module LlmTeam
 
         # Reset performance metrics for primary agent and all tool agents
         def reset_all_stats
-          puts "\n🔄 Resetting statistics for all agents...".blue.bold
           reset_stats
           @available_tools.each do |tool_name, agent|
             agent.reset_stats
           end
-          puts "✅ All agent statistics have been reset".green.bold
+          puts "\n🧹 Reset statistics for all agents...".blue.bold
         end
 
         # Clear conversation state for primary agent and all tool agents
         def clear_conversation
-          puts "\n🧹 Clearing conversation history for all agents...".blue.bold
           super # Clear primary agent's own conversation history
           @available_tools.each do |tool_name, agent|
             agent.clear_conversation
           end
-          puts "✅ All agent conversation histories have been cleared".green.bold
+          puts "\n🧹 Cleared conversation history for all agents...".blue.bold
         end
 
         # Comprehensive latency reporting across all agents with averages

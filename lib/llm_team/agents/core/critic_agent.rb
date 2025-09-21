@@ -77,6 +77,10 @@ module LlmTeam
           Be constructive and helpful, not just critical. Only mark issues as MAJOR if they truly need attention and would benefit from another iteration.
         PROMPT
 
+        TOOL_PROMPT = <<~PROMPT
+          - [CRITIC TOOL] `critique_content(content, original_request, criteria)`: Critique content against the user's original request.
+        PROMPT
+
         def initialize(history_behavior: :none, model: nil)
           super("CriticAgent", history_behavior: history_behavior, model: model)
         end

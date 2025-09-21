@@ -44,6 +44,16 @@ module LlmTeam
         self.class.const_defined?(:SYSTEM_PROMPT) ? self.class::SYSTEM_PROMPT : nil
       end
 
+      # Dynamic tool prompt resolution - subclasses can define TOOL_PROMPT constant
+      def tool_prompt
+        (self.class.const_defined?(:TOOL_PROMPT) ? self.class::TOOL_PROMPT : nil)
+      end
+
+      # Dynamic tool prompt resolution for registered tools
+      def registered_tool_prompts
+        @available_tools.values.map(&:tool_prompt).compact.join("\n")
+      end
+
       # Get agent-specific model parameters with fallbacks to configuration
       def model_parameters
         config = LlmTeam.configuration
@@ -95,8 +105,12 @@ module LlmTeam
         # Use agent's default temperature if not provided
         temperature ||= model_parameters[:temperature]
 
+        # create a constructed system prompt using this class's system_prompt and all registered tools' prompts
+        constructed_tool_prompt = registered_tool_prompts.empty? ? "" : "\n\nTOOLS AVAILABLE:\n" + registered_tool_prompts
+        constructed_system_prompt = system_prompt + (constructed_tool_prompt.empty? ? "" : constructed_tool_prompt)
+
         # Build conversation context from persistent history + new message
-        conversation_messages = @conversation.build_conversation_for_llm(system_prompt, initial_message, history_behavior: history_behavior)
+        conversation_messages = @conversation.build_conversation_for_llm(constructed_system_prompt, initial_message, history_behavior: history_behavior)
 
         # Initialize ephemeral conversation for this call
         @conversation.conversation_history = conversation_messages
@@ -355,7 +369,6 @@ module LlmTeam
         @total_tokens_used = 0
         @total_latency_ms = 0
         @llm_calls_count = 0
-        puts "📊 #{name} statistics reset".green
       end
 
       # Latency formatting helper (ms to seconds)
@@ -378,8 +391,6 @@ module LlmTeam
 
       # Scan directory and load all auxiliary agent files
       def load_auxiliary_agents_from_path(path)
-        puts "🔍 Loading auxiliary agents from: #{path}".blue
-        
         Dir.glob(File.join(path, "**", "*_agent.rb")).each do |file|
           load_auxiliary_agent_file(file)
         end
