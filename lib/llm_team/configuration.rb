@@ -19,7 +19,7 @@ module LlmTeam
     # Logging Configuration
     attr_accessor :log_level
 
-    DEFAULT_MODEL = "google/gemini-2.5-pro"
+    DEFAULT_MODEL = "google/gemini-2.5-flash"
     DEFAULT_MAX_ITERATIONS = 5
     DEFAULT_TEMPERATURE = 0.7
     DEFAULT_HISTORY_BEHAVIOR = :none

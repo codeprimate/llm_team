@@ -329,7 +329,7 @@ module LlmTeam
 
       # Dynamic tool method invocation with keyword argument spreading
       def execute_tool(tool_agent, function_name, arguments)
-        tool_agent.new.public_send(function_name, **arguments)
+        tool_agent.public_send(function_name, **arguments)
       end
 
       # Extract tool execution results from conversation history
@@ -422,7 +422,6 @@ module LlmTeam
           expected_namespace_prefix = "LlmTeam::Agents::Auxiliary::#{this_agent_class_name}::"
           
           unless full_class_name.start_with?(expected_namespace_prefix)
-            puts "⚠️  Skipping #{File.basename(file)}: Namespace #{full_class_name} doesn't match this agent (#{this_agent_class_name})".yellow
             return
           end
           
@@ -431,7 +430,7 @@ module LlmTeam
           
           # Check if the expected class exists in the derived namespace
           begin
-            agent_class = full_class_name.constantize
+            agent_class = Object.const_get(full_class_name)
           rescue NameError
             puts "⚠️  Skipping #{File.basename(file)}: Expected class #{full_class_name} not found".yellow
             return

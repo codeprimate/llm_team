@@ -35,6 +35,7 @@ Gem::Specification.new do |spec|
   # Dependencies
   spec.add_dependency "ruby-openai", "~> 7.0"
   spec.add_dependency "colorize", "~> 1.1"
+  spec.add_dependency "symbolic", "~> 0.3"
   
   # Development dependencies
   spec.add_development_dependency "rspec", "~> 3.12"
