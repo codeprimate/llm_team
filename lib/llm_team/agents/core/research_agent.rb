@@ -31,8 +31,8 @@ module LlmTeam
           - [RESEARCH TOOL] `execute_research(topic, original_user_request, research_type, grounding_context)`: Gather information on a given topic with contextual guidance.
         PROMPT
 
-        def initialize(history_behavior: :none, model: nil)
-          super("ResearchAgent", history_behavior: history_behavior, model: model)
+        def initialize(history_behavior: :none, model: nil, max_iterations: 3)
+          super("ResearchAgent", history_behavior: history_behavior, model: model, max_iterations: max_iterations)
         end
 
         # Research execution with structured context building
