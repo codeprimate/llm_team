@@ -22,7 +22,7 @@ A multi-agent LLM orchestration system that uses specialized AI agents working t
   - `ResearchAgent`: Information gathering with contextual research modes
   - `CriticAgent`: Quality assessment with structured feedback
   - `PresenterAgent`: Final synthesis and response formatting
-  - `Orchestrator`: LLM-driven workflow coordination
+  - `PrimaryAgent`: LLM-driven workflow coordination
 
 ### Agent Workflow
 
@@ -140,7 +140,7 @@ llm_team/
 │   │   │       ├── research_agent.rb
 │   │   │       ├── critic_agent.rb
 │   │   │       ├── presenter_agent.rb
-│   │   │       └── orchestrator.rb
+│   │   │       └── primary_agent.rb
 │   │   │
 │   │   └── cli/                       # CLI interface
 │   │       └── application.rb

@@ -125,7 +125,7 @@ module LlmTeam
       # 
       # Non-obvious behavior:
       # - Maps tool names to their output content for result aggregation
-      # - Used by orchestrator to collect results from multiple tool calls
+      # - Used by primary agent to collect results from multiple tool calls
       def extract_agent_results_from_history
         results = {}
         @conversation_history.each do |message|

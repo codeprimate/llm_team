@@ -72,6 +72,10 @@ module LlmTeam
 
       # Tool registration: maps symbolic names to agent instances for dynamic dispatch
       def register_tool(tool_name, tool_instance)
+        if @available_tools.key?(tool_name)
+          raise LlmTeam::AgentRegistrationError, "Tool '#{tool_name}' is already registered. Cannot overwrite existing tool."
+        end
+
         @available_tools[tool_name] = tool_instance
       end
 
@@ -320,7 +324,7 @@ module LlmTeam
       # 
       # Non-obvious behavior:
       # - Maps tool names to their output content for result aggregation
-      # - Used by orchestrator to collect results from multiple tool calls
+      # - Used by primary agent to collect results from multiple tool calls
       def extract_agent_results_from_history
         @conversation.extract_agent_results_from_history
       end

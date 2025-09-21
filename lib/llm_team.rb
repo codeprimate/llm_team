@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# LLM Team Orchestrator - Multi-agent system with tool calling and conversation management
+# LLM Team Primary Agent - Multi-agent system with tool calling and conversation management
 
 require_relative "llm_team/version"
 require_relative "llm_team/errors"
@@ -19,7 +19,7 @@ require_relative "llm_team/core/agent"
 require_relative "llm_team/agents/core/research_agent"
 require_relative "llm_team/agents/core/critic_agent"
 require_relative "llm_team/agents/core/presenter_agent"
-require_relative "llm_team/agents/core/orchestrator"
+require_relative "llm_team/agents/core/primary_agent"
 
 # CLI
 require_relative "llm_team/cli/application"
@@ -42,7 +42,7 @@ module LlmTeam
 
 end
 
-# LLM Team Orchestrator - Setup and Usage
+# LLM Team Primary Agent - Setup and Usage
 #
 # Prerequisites:
 # 1. Install dependencies: `bundle install` (requires ruby-openai gem)
@@ -50,7 +50,7 @@ end
 # 3. Run: `ruby llm_team.rb`
 #
 # Key Features:
-# - Multi-agent orchestration with research, critique, and synthesis workflow
+# - Multi-agent coordination with research, critique, and synthesis workflow
 # - Conversation history management with configurable persistence modes
 # - Performance tracking (tokens, latency) across all agents
 # - Interactive CLI with command handling and error recovery
@@ -59,7 +59,7 @@ end
 # Architecture:
 # - Agent base class with dual conversation tracking (ephemeral + persistent)
 # - Specialized agents: ResearchAgent, CriticAgent, PresenterAgent
-# - Orchestrator implementing structured decision tree workflow
+# - PrimaryAgent implementing structured decision tree workflow
 # - Interactive CLI application with cross-platform command handling
 #
 # Usage Examples:

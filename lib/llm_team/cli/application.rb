@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "../agents/core/orchestrator"
+require_relative "../agents/core/primary_agent"
 
 module LlmTeam
   module CLI
@@ -18,19 +18,19 @@ module LlmTeam
 
       def run
         parse_arguments
-        orchestrator = LlmTeam::Agents::Core::Orchestrator.new(
+        primary_agent = LlmTeam::Agents::Core::PrimaryAgent.new(
           max_iterations: @options[:max_iterations] || 20,
           model: @options[:model]
         )
 
         if @options[:interactive]
-          run_interactive_mode(orchestrator)
+          run_interactive_mode(primary_agent)
         else
-          run_single_query_mode(orchestrator)
+          run_single_query_mode(primary_agent)
         end
       end
 
-      def run_interactive_mode(orchestrator)
+      def run_interactive_mode(primary_agent)
         puts "\n🤖 LLM Team Interactive Mode".blue.bold
         puts "=" * 50
         puts "Welcome! You can now interact with the LLM team directly.".green
@@ -60,7 +60,7 @@ module LlmTeam
           end
 
           # Reset statistics for accurate per-interaction tracking
-          orchestrator.reset_all_stats
+          primary_agent.reset_all_stats
 
           # Handle empty input
           if user_input.empty?
@@ -87,7 +87,7 @@ module LlmTeam
           # Handle clear command with cross-platform support
           if user_input.downcase == "clear"
             system("clear") || system("cls")
-            orchestrator.clear_conversation
+            primary_agent.clear_conversation
             puts "\n🤖 LLM Team Interactive Mode - Screen and conversation cleared".blue
             next
           end
@@ -97,7 +97,7 @@ module LlmTeam
             puts "\n🔄 Processing your request...".yellow.bold
             puts "─" * 50
 
-            final_answer = orchestrator.respond(user_input)
+            final_answer = primary_agent.respond(user_input)
 
             puts "\n" + "=" * 50
             puts "🎯 FINAL ANSWER:".green.bold
@@ -115,7 +115,7 @@ module LlmTeam
         end
       end
 
-      def run_single_query_mode(orchestrator)
+      def run_single_query_mode(primary_agent)
         query = @options[:query]
         puts "\n🤖 LLM Team - Single Query Mode".blue.bold
         puts "=" * 50
@@ -131,14 +131,14 @@ module LlmTeam
         puts "=" * 50
 
         # Reset statistics for accurate tracking
-        orchestrator.reset_all_stats
+        primary_agent.reset_all_stats
 
         # Process the single query
         begin
           puts "\n🔄 Processing your request...".yellow.bold
           puts "─" * 50
 
-          final_answer = orchestrator.respond(query)
+          final_answer = primary_agent.respond(query)
 
           puts "\n" + "=" * 50
           puts "🎯 FINAL ANSWER:".green.bold
