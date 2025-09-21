@@ -6,7 +6,7 @@ module LlmTeam
   module Agents
     module Core
       # Presenter agent for final synthesis with critique integration
-      # 
+      #
       # Non-obvious behaviors:
       # - Uses very low temperature (0.2) for consistent, polished output
       # - Integrates critique feedback by addressing MAJOR issues in final output
@@ -29,6 +29,13 @@ module LlmTeam
           When synthesizing:
           - If criticism or feedback is provided, provide special attention to MAJOR issues into your final output
           - Write as if the improved version is the original, polished response
+          
+          CRITICAL REQUIREMENTS:
+          - You MUST always generate a complete, substantive response
+          - NEVER return empty content, null responses, or just acknowledgments
+          - Your response must directly answer the user's question using the provided information
+          - Even if the agent outputs are incomplete, synthesize what you have into a coherent response
+          - If no useful information is provided, explain what information would be needed to answer the question
           
           Make sure the final output is easy to read, uses markdown where appropriate,
           and directly answers the user's request based on the provided agent outputs.
