@@ -69,5 +69,6 @@ end
 
 # Direct execution entry point
 if __FILE__ == $0
+  # When run directly, process command line arguments
   LlmTeam::CLI::Application.new.run
 end

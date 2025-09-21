@@ -74,8 +74,8 @@ module LlmTeam
           Be constructive and helpful, not just critical. Only mark issues as MAJOR if they truly need attention and would benefit from another iteration.
         PROMPT
 
-        def initialize(history_behavior: :none)
-          super("CriticAgent", history_behavior: history_behavior)
+        def initialize(history_behavior: :none, model: nil)
+          super("CriticAgent", history_behavior: history_behavior, model: model)
         end
 
         # Content critique with structured feedback and iteration guidance

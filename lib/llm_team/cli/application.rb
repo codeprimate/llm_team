@@ -18,7 +18,10 @@ module LlmTeam
 
       def run
         parse_arguments
-        orchestrator = LlmTeam::Agents::Core::Orchestrator.new(max_iterations: @options[:max_iterations] || 20)
+        orchestrator = LlmTeam::Agents::Core::Orchestrator.new(
+          max_iterations: @options[:max_iterations] || 20,
+          model: @options[:model]
+        )
 
         if @options[:interactive]
           run_interactive_mode(orchestrator)
@@ -32,6 +35,14 @@ module LlmTeam
         puts "=" * 50
         puts "Welcome! You can now interact with the LLM team directly.".green
         puts "Type your questions or requests, and the team will work together to help you."
+        
+        if @options[:verbose]
+          puts "\n🔧 Configuration:".cyan
+          puts "  Model: #{@options[:model] || 'deepseek/deepseek-chat-v3.1 (default)'}"
+          puts "  Max Iterations: #{@options[:max_iterations]}"
+          puts "  History Behavior: #{@options[:history_behavior]}"
+        end
+        
         puts "\n📋 Commands:".yellow
         puts "  'exit', 'quit', or 'q' - Exit the interactive mode"
         puts "  'help' - Show this help message"
@@ -40,13 +51,19 @@ module LlmTeam
 
         loop do
           print "\n💬 You: ".cyan
-          user_input = gets&.chomp&.strip
+          user_input = $stdin.gets&.chomp&.strip
+
+          # Handle EOF (Ctrl+D) or nil input
+          if user_input.nil?
+            puts "\n👋 Goodbye! Thanks for using the LLM Team!".green.bold
+            break
+          end
 
           # Reset statistics for accurate per-interaction tracking
           orchestrator.reset_all_stats
 
           # Handle empty input
-          if user_input.nil? || user_input.empty?
+          if user_input.empty?
             puts "⚠️  Please enter a question or request.".yellow
             next
           end
@@ -103,6 +120,14 @@ module LlmTeam
         puts "\n🤖 LLM Team - Single Query Mode".blue.bold
         puts "=" * 50
         puts "Query: #{query}".green
+        
+        if @options[:verbose]
+          puts "\n🔧 Configuration:".cyan
+          puts "  Model: #{@options[:model] || 'deepseek/deepseek-chat-v3.1 (default)'}"
+          puts "  Max Iterations: #{@options[:max_iterations]}"
+          puts "  History Behavior: #{@options[:history_behavior]}"
+        end
+        
         puts "=" * 50
 
         # Reset statistics for accurate tracking
@@ -157,6 +182,10 @@ module LlmTeam
             @options[:max_iterations] = args.shift&.to_i || 20
           when "--model", "-m"
             @options[:model] = args.shift
+            if @options[:model].nil?
+              puts "❌ --model requires a model name".red
+              exit 1
+            end
           when "--history", "-H"
             behavior = args.shift&.to_sym
             if [:none, :last, :full].include?(behavior)

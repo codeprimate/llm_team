@@ -27,8 +27,8 @@ module LlmTeam
           When specific focus areas are mentioned, prioritize those aspects in your research.
         PROMPT
 
-        def initialize(history_behavior: :none)
-          super("ResearchAgent", history_behavior: history_behavior)
+        def initialize(history_behavior: :none, model: nil)
+          super("ResearchAgent", history_behavior: history_behavior, model: model)
         end
 
         # Research execution with structured context building

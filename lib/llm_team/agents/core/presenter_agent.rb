@@ -31,8 +31,8 @@ module LlmTeam
           and directly answers the user's request based on the provided agent outputs.
         PROMPT
 
-        def initialize(history_behavior: :none)
-          super("PresenterAgent", history_behavior: history_behavior)
+        def initialize(history_behavior: :none, model: nil)
+          super("PresenterAgent", history_behavior: history_behavior, model: model)
         end
 
         # Final synthesis with structured agent output formatting

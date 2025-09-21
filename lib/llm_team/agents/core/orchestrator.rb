@@ -65,13 +65,13 @@ module LlmTeam
           - Never use tools outside of this decision tree workflow
         PROMPT
 
-        def initialize(history_behavior: :last, max_iterations: 10)
-          super("Orchestrator", history_behavior: history_behavior, max_iterations: max_iterations)
+        def initialize(history_behavior: :last, max_iterations: 10, model: nil)
+          super("Orchestrator", history_behavior: history_behavior, max_iterations: max_iterations, model: model)
 
           # Register tool agents for orchestration
-          register_tool(:research, ResearchAgent.new)
-          register_tool(:critic, CriticAgent.new)
-          register_tool(:presenter, PresenterAgent.new)
+          register_tool(:research, ResearchAgent.new(model: model))
+          register_tool(:critic, CriticAgent.new(model: model))
+          register_tool(:presenter, PresenterAgent.new(model: model))
         end
 
         # Main orchestration entry point with performance reporting
