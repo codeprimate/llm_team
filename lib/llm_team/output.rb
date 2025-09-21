@@ -5,19 +5,19 @@ require "colorize"
 module LlmTeam
   module Output
     OUTPUT_TYPES = {
-      # Application Level - always visible
+      # Application Level
       app:           { icon: "🤖", color: [:blue, :bold],   indent: 0, level: :normal },
       user:          { icon: "💬", color: :cyan,            indent: 0, level: :normal },
       result:        { icon: "🎯", color: [:green, :bold],  indent: 0, level: :normal },
       
-      # Workflow Level - visible in normal mode
+      # Workflow Level
       workflow:      { icon: "🔄", color: [:blue, :bold],   indent: 0, level: :normal },
       tool:          { icon: "🔧", color: :magenta,         indent: 2, level: :normal },
       status:        { icon: "✅", color: [:green, :bold],  indent: 2, level: :normal },
       
-      # Technical Level - verbose only  
+      # Technical Level
       technical:     { icon: "📡", color: :cyan,            indent: 2, level: :verbose },
-      performance:   { icon: "⏱️", color: :light_black,     indent: 2, level: :verbose },
+      performance:   { icon: "⏱️", color: :light_black,     indent: 2, level: :normal },
       data:          { icon: "📊", color: :light_black,     indent: 4, level: :verbose },
       
       # Error/Warning Level - context-sensitive
