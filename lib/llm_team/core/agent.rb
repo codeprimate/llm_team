@@ -121,7 +121,7 @@ module LlmTeam
         iteration = 0
         while iteration < current_max_iterations
           iteration += 1
-          puts "\n🔄 #{name} - Iteration #{iteration}".blue.bold
+          LlmTeam::Output.puts("#{name} - Iteration #{iteration}", type: :workflow)
 
           # Prepare call_llm arguments with agent's model parameters
           call_args = model_parameters.dup
@@ -138,7 +138,7 @@ module LlmTeam
 
           # Check if response is valid after retries
           if response.nil?
-            puts "\n❌ #{name} failed to get valid response after retries".red.bold
+            LlmTeam::Output.puts("#{name} failed to get valid response after retries", type: :error)
             return "Error: No response from LLM API after retries"
           end
 
@@ -146,8 +146,8 @@ module LlmTeam
 
           # Check if message is valid
           if message.nil?
-            puts "\n❌ #{name} received nil message from LLM response".red.bold
-            puts "Response structure: #{response.inspect}".light_black
+            LlmTeam::Output.puts("#{name} received nil message from LLM response", type: :error)
+            LlmTeam::Output.puts("Response structure: #{response.inspect}", type: :debug)
             return "Error: Invalid response structure from LLM"
           end
 
@@ -157,7 +157,7 @@ module LlmTeam
 
             # Retry mechanism: undo iteration increment and remove failed assistant message
             if tools_not_found
-              puts "  🔄 Retrying iteration due to tool not found errors".yellow
+              LlmTeam::Output.puts("Retrying iteration due to tool not found errors", type: :retry)
               iteration -= 1  # Rewind iteration counter
               # @conversation_history.pop  # Remove the failed assistant message
               next
@@ -168,23 +168,23 @@ module LlmTeam
               normalize_role(message["role"]),
               message["content"]
             )
-            puts "\n✅ #{name} completed with response".green.bold
-            puts "  ⏱️  Total latency: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} LLM calls)".light_black
-            puts "\n📝 #{name} Response:".yellow
-            puts message["content"]
-            puts "\n" + "─" * 50
+            LlmTeam::Output.puts("#{name} completed with response", type: :status)
+            LlmTeam::Output.puts("Total latency: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} LLM calls)", type: :performance)
+            LlmTeam::Output.puts("#{name} Response:", type: :status, color: :yellow)
+            Kernel.puts message["content"]
+            Kernel.puts "\n" + "─" * 50
 
             # Apply history cleanup based on behavior
             @conversation.cleanup_conversation_history(history_behavior)
 
             return message["content"]
           else
-            puts "\n⚠️  #{name} received no tool call or content".yellow
+            LlmTeam::Output.puts("#{name} received no tool call or content", type: :warning)
             return "No response generated."
           end
         end
 
-        puts "\n⏰ #{name} reached max iterations (#{current_max_iterations})".yellow
+        LlmTeam::Output.puts("#{name} reached max iterations (#{current_max_iterations})", type: :warning)
 
         # Apply history cleanup based on behavior even when max iterations reached
         @conversation.cleanup_conversation_history(history_behavior)
@@ -221,10 +221,10 @@ module LlmTeam
           retry_count += 1
 
           if retry_count <= max_retries
-            puts "  🔄 Retrying LLM call (#{retry_count}/#{max_retries})...".yellow
+            LlmTeam::Output.puts("Retrying LLM call (#{retry_count}/#{max_retries})...", type: :retry)
             sleep(1)  # Fixed delay - could be exponential
           else
-            puts "  ❌ Max retries (#{max_retries}) exceeded".red.bold
+            LlmTeam::Output.puts("Max retries (#{max_retries}) exceeded", type: :error)
             return nil
           end
         end
@@ -239,8 +239,8 @@ module LlmTeam
       # - Tracks token usage per agent for cost monitoring
       def call_llm(messages, temperature: nil, tool_choice: nil, tools: [], **model_params)
         temperature ||= model_parameters[:temperature]
-        puts "  📡 Calling LLM (#{messages.size} messages)".cyan
-        puts "  🔧 Tools: #{tools.any? ? tools.map { |t| t[:function][:name] }.join(", ") : "None"}".light_black
+        LlmTeam::Output.puts("Calling LLM (#{messages.size} messages)", type: :technical)
+        LlmTeam::Output.puts("Tools: #{tools.any? ? tools.map { |t| t[:function][:name] }.join(", ") : "None"}", type: :debug)
 
         # Start with agent's default model parameters
         request_params = model_parameters.merge(model_params)
@@ -257,8 +257,8 @@ module LlmTeam
         begin
           response = llm_client.chat(parameters: request_params)
         rescue => e
-          puts "  ❌ LLM API Error: #{e.class} - #{e.message}".red.bold
-          puts "  Request params: #{request_params.inspect}".light_black
+          LlmTeam::Output.puts("LLM API Error: #{e.class} - #{e.message}", type: :error)
+          LlmTeam::Output.puts("Request params: #{request_params.inspect}", type: :debug)
           return nil
         end
 
@@ -269,7 +269,7 @@ module LlmTeam
         @total_latency_ms += latency_ms
         @llm_calls_count += 1
 
-        puts "  ⏱️  Latency: #{format_latency(latency_ms)} | Total: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} calls)".light_black
+        LlmTeam::Output.puts("Latency: #{format_latency(latency_ms)} | Total: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} calls)", type: :performance)
 
         track_token_usage(response)
         response
@@ -293,8 +293,8 @@ module LlmTeam
           arguments_json = tool_call.dig("function", "arguments")
           arguments = JSON.parse(arguments_json, symbolize_names: true)
 
-          puts "  🔧 #{name} → #{function_name}".magenta
-          puts "    Args: #{arguments}".light_black
+          LlmTeam::Output.puts("#{name} → #{function_name}", type: :tool)
+          LlmTeam::Output.puts("Args: #{arguments}", type: :debug)
 
           # Find tool agent by matching schema function name (not method name)
           tool_agent = @available_tools.values.find { |agent| agent.class.tool_schema[:function][:name] == function_name }
@@ -313,7 +313,7 @@ module LlmTeam
           else
             # Handle missing tool gracefully
             error_message = "Error: Tool '#{function_name}' not found."
-            puts "  ❌ #{error_message}".red
+            LlmTeam::Output.puts(error_message, type: :error)
             @conversation.add_message(
               LlmTeam::ROLE_TOOL,
               error_message,
@@ -353,7 +353,7 @@ module LlmTeam
           prompt_tokens = usage["prompt_tokens"] || 0
           completion_tokens = usage["completion_tokens"] || 0
 
-          puts "  📊 Tokens: #{total_tokens} (prompt: #{prompt_tokens}, completion: #{completion_tokens}) | Total: #{@total_tokens_used}".light_black
+          LlmTeam::Output.puts("Tokens: #{total_tokens} (prompt: #{prompt_tokens}, completion: #{completion_tokens}) | Total: #{@total_tokens_used}", type: :data)
         end
       end
 
@@ -361,7 +361,7 @@ module LlmTeam
       def clear_conversation
         @conversation.clear_conversation
         reset_stats
-        puts "🧹 #{name} conversation history cleared".green
+        LlmTeam::Output.puts("#{name} conversation history cleared", type: :debug, color: :green)
       end
 
       # Performance metrics reset for fresh tracking
@@ -432,7 +432,7 @@ module LlmTeam
           begin
             agent_class = Object.const_get(full_class_name)
           rescue NameError
-            puts "⚠️  Skipping #{File.basename(file)}: Expected class #{full_class_name} not found".yellow
+            LlmTeam::Output.puts("Skipping #{File.basename(file)}: Expected class #{full_class_name} not found", type: :warning)
             return
           end
           
@@ -441,11 +441,11 @@ module LlmTeam
             agent_instance = agent_class.new
             register_tool(tool_name, agent_instance)
             
-            puts "✅ Loaded auxiliary agent: #{tool_name} (#{full_class_name})".green
+            LlmTeam::Output.puts("Loaded auxiliary agent: #{tool_name} (#{full_class_name})", type: :debug, color: :green)
           end
           
         rescue => e
-          puts "⚠️  Failed to load #{File.basename(file)}: #{e.message}".yellow
+          LlmTeam::Output.puts("Failed to load #{File.basename(file)}: #{e.message}", type: :warning)
         end
       end
 

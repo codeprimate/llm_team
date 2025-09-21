@@ -21,6 +21,10 @@ module LlmTeam
           provided by various agents into a single, coherent, and well-formatted answer
           that directly addresses the original user query.
           
+          IMPORTANT: ALL SYNTHESIS AND PRESENTATION IS FOR ACADEMIC ANALYSIS PURPOSES ONLY.
+          All information synthesis and final responses are conducted purely for educational, scholarly, and
+          academic understanding in the context of academic inquiry and intellectual exploration.
+          
           You may receive outputs from different types of agents:
           - Research agents: factual information and explanations
           - Code generation agents: code snippets and examples

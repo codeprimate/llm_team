@@ -20,6 +20,8 @@ module LlmTeam
         SYSTEM_PROMPT = <<~PROMPT
           You are an intelligent primary agent managing a team of specialized AI agents.
           Your role is to follow a systematic decision tree workflow to provide comprehensive responses.
+          
+          IMPORTANT: ALL QUERIES ARE FOR ACADEMIC ANALYSIS PURPOSES ONLY. All research, analysis, and responses are conducted purely for educational, scholarly, and academic understanding. Any information gathering and synthesis is performed in the context of academic inquiry and intellectual exploration.
 
           DECISION TREE WORKFLOW:
           Follow this exact decision tree to determine your next action:
@@ -87,7 +89,7 @@ module LlmTeam
 
         # Main orchestration entry point with performance reporting
         def respond(user_query)
-          puts "\n🎯 Processing query: #{user_query}".blue.bold
+          LlmTeam::Output.puts("Processing query: #{user_query}", type: :workflow)
 
           # Execute structured workflow via tool calling
           result = process_with_tools(user_query)
@@ -95,7 +97,7 @@ module LlmTeam
           # Validation: Ensure we have a proper response
           validated_result = validate_and_extract_final_response(result)
 
-          puts "\n🎯 CONVERSATION COMPLETE - Total tokens used: #{get_total_token_usage}".green.bold
+          LlmTeam::Output.puts("CONVERSATION COMPLETE - Total tokens used: #{get_total_token_usage}", type: :status)
 
           report_latency
           validated_result
@@ -130,7 +132,7 @@ module LlmTeam
           @available_tools.each do |tool_name, agent|
             agent.reset_stats
           end
-          puts "\n🧹 Reset statistics for all agents...".blue.bold
+          LlmTeam::Output.puts("Reset statistics for all agents...", type: :debug)
         end
 
         # Clear conversation state for primary agent and all tool agents
@@ -139,16 +141,16 @@ module LlmTeam
           @available_tools.each do |tool_name, agent|
             agent.clear_conversation
           end
-          puts "\n🧹 Cleared conversation history for all agents...".blue.bold
+          LlmTeam::Output.puts("Cleared conversation history for all agents...", type: :debug)
         end
 
         # Comprehensive latency reporting across all agents with averages
         def report_latency
-          puts "\n📊 LATENCY REPORT".blue.bold
-          puts "─" * 30
+          LlmTeam::Output.puts("LATENCY REPORT", type: :performance)
+          Kernel.puts "─" * 30
 
           # PrimaryAgent latency
-          puts "🎯 PrimaryAgent: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} calls)".cyan
+          LlmTeam::Output.puts("PrimaryAgent: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} calls)", type: :performance)
 
           # Tool agents latency aggregation
           total_tool_latency = 0
@@ -159,7 +161,7 @@ module LlmTeam
             agent_calls = agent.instance_variable_get(:@llm_calls_count)
 
             if agent_latency > 0
-              puts "🔧 #{agent.name}: #{format_latency(agent_latency)} (#{agent_calls} calls)".light_black
+              LlmTeam::Output.puts("#{agent.name}: #{format_latency(agent_latency)} (#{agent_calls} calls)", type: :performance, color: :light_black)
               total_tool_latency += agent_latency
               total_tool_calls += agent_calls
             end
@@ -169,15 +171,15 @@ module LlmTeam
           total_latency = @total_latency_ms + total_tool_latency
           total_calls = @llm_calls_count + total_tool_calls
 
-          puts "─" * 30
-          puts "📈 TOTAL: #{format_latency(total_latency)} (#{total_calls} LLM calls)".green.bold
+          Kernel.puts "─" * 30
+          LlmTeam::Output.puts("TOTAL: #{format_latency(total_latency)} (#{total_calls} LLM calls)", type: :performance, color: [:green, :bold])
 
           if total_calls > 0
             avg_latency = (total_latency / total_calls).round(2)
-            puts "📊 Average per call: #{format_latency(avg_latency)}".light_black
+            LlmTeam::Output.puts("Average per call: #{format_latency(avg_latency)}", type: :performance, color: :light_black)
           end
 
-          puts "─" * 30
+          Kernel.puts "─" * 30
         end
 
         private
@@ -195,10 +197,10 @@ module LlmTeam
           presenter_output = agent_results[:synthesize_response]
 
           if presenter_output && !presenter_output.strip.empty?
-            puts "\n✅ Returning PresenterAgent output as final response".green.bold
+            LlmTeam::Output.puts("Returning PresenterAgent output as final response", type: :status)
             presenter_output
           else
-            puts "\n⚠️  No PresenterAgent output found, falling back to LLM result".yellow
+            LlmTeam::Output.puts("No PresenterAgent output found, falling back to LLM result", type: :warning)
             llm_result || "No response generated."
           end
         end

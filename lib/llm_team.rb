@@ -5,6 +5,7 @@
 require_relative "llm_team/version"
 require_relative "llm_team/errors"
 require_relative "llm_team/configuration"
+require_relative "llm_team/output"
 
 # Core dependencies
 require "ruby/openai"

@@ -18,6 +18,11 @@ module LlmTeam
 
       def run
         parse_arguments
+        
+        # Set global configuration from CLI options
+        LlmTeam.configuration.verbose = @options[:verbose] if @options[:verbose]
+        LlmTeam.configuration.quiet = @options[:quiet] if @options[:quiet]
+        
         primary_agent = LlmTeam::Agents::Core::PrimaryAgent.new(
           max_iterations: @options[:max_iterations] || 20,
           model: @options[:model]
@@ -31,31 +36,31 @@ module LlmTeam
       end
 
       def run_interactive_mode(primary_agent)
-        puts "\n🤖 LLM Team Interactive Mode".blue.bold
-        puts "=" * 50
-        puts "Welcome! You can now interact with the LLM team directly.".green
-        puts "Type your questions or requests, and the team will work together to help you."
+        LlmTeam::Output.puts("LLM Team Interactive Mode", type: :app)
+        Kernel.puts "=" * 50
+        LlmTeam::Output.puts("Welcome! You can now interact with the LLM team directly.", type: :app, color: :green)
+        LlmTeam::Output.puts("Type your questions or requests, and the team will work together to help you.", type: :app)
         
         if @options[:verbose]
-          puts "\n🔧 Configuration:".cyan
-          puts "  Model: #{@options[:model] || 'deepseek/deepseek-chat-v3.1 (default)'}"
-          puts "  Max Iterations: #{@options[:max_iterations]}"
-          puts "  History Behavior: #{@options[:history_behavior]}"
+          LlmTeam::Output.puts("Configuration:", type: :debug)
+          LlmTeam::Output.puts("  Model: #{@options[:model] || '#{LlmTeam::Configuration::DEFAULT_MODEL} (default)'}", type: :debug)
+          LlmTeam::Output.puts("  Max Iterations: #{@options[:max_iterations]}", type: :debug)
+          LlmTeam::Output.puts("  History Behavior: #{@options[:history_behavior]}", type: :debug)
         end
         
-        puts "\n📋 Commands:".yellow
-        puts "  'exit', 'quit', or 'q' - Exit the interactive mode"
-        puts "  'help' - Show this help message"
-        puts "  'clear' - Clear the screen and conversation history"
-        puts "\n" + "=" * 50
+        LlmTeam::Output.puts("Commands:", type: :user, color: :yellow)
+        LlmTeam::Output.puts("  'exit', 'quit', or 'q' - Exit the interactive mode", type: :user)
+        LlmTeam::Output.puts("  'help' - Show this help message", type: :user)
+        LlmTeam::Output.puts("  'clear' - Clear the screen and conversation history", type: :user)
+        Kernel.puts "\n" + "=" * 50
 
         loop do
-          print "\n💬 You: ".cyan
+          LlmTeam::Output.user_prompt("\n💬 You: ")
           user_input = $stdin.gets&.chomp&.strip
 
           # Handle EOF (Ctrl+D) or nil input
           if user_input.nil?
-            puts "\n👋 Goodbye! Thanks for using the LLM Team!".green.bold
+            LlmTeam::Output.puts("Goodbye! Thanks for using the LLM Team!", type: :app, color: [:green, :bold])
             break
           end
 
@@ -64,23 +69,23 @@ module LlmTeam
 
           # Handle empty input
           if user_input.empty?
-            puts "⚠️  Please enter a question or request.".yellow
+            LlmTeam::Output.puts("Please enter a question or request.", type: :warning)
             next
           end
 
           # Handle exit commands
           if ["exit", "quit", "q"].include?(user_input.downcase)
-            puts "\n👋 Goodbye! Thanks for using the LLM Team!".green.bold
+            LlmTeam::Output.puts("Goodbye! Thanks for using the LLM Team!", type: :app, color: [:green, :bold])
             break
           end
 
           # Handle help command
           if user_input.downcase == "help"
-            puts "\n📖 Help - Available Commands:".yellow.bold
-            puts "  'exit', 'quit', or 'q' - Exit the interactive mode"
-            puts "  'help' - Show this help message"
-            puts "  'clear' - Clear the screen and conversation history"
-            puts "  Any other text - Send as a query to the LLM team"
+            LlmTeam::Output.puts("Help - Available Commands:", type: :user, color: [:yellow, :bold])
+            LlmTeam::Output.puts("  'exit', 'quit', or 'q' - Exit the interactive mode", type: :user)
+            LlmTeam::Output.puts("  'help' - Show this help message", type: :user)
+            LlmTeam::Output.puts("  'clear' - Clear the screen and conversation history", type: :user)
+            LlmTeam::Output.puts("  Any other text - Send as a query to the LLM team", type: :user)
             next
           end
 
@@ -88,71 +93,63 @@ module LlmTeam
           if user_input.downcase == "clear"
             system("clear") || system("cls")
             primary_agent.clear_conversation
-            puts "\n🤖 LLM Team Interactive Mode - Screen and conversation cleared".blue
+            LlmTeam::Output.puts("LLM Team Interactive Mode - Screen and conversation cleared", type: :app)
             next
           end
 
           # Process user query with comprehensive error handling
           begin
-            puts "\n🔄 Processing your request...".yellow.bold
-            puts "─" * 50
+            LlmTeam::Output.puts("Processing your request...", type: :workflow, color: [:yellow, :bold])
+            Kernel.puts "─" * 50
 
             final_answer = primary_agent.respond(user_input)
 
-            puts "\n" + "=" * 50
-            puts "🎯 FINAL ANSWER:".green.bold
-            puts "=" * 50
-            puts final_answer
-            puts "=" * 50
+            LlmTeam::Output.final_answer(final_answer)
           rescue OpenAI::Error => e
-            puts "\n❌ LLM Error: #{e.message}".red.bold
-            puts "Please ensure your OPENROUTER_API_KEY environment variable is set.".yellow
-            puts e.backtrace.join("\n") if ENV["DEBUG"]
+            LlmTeam::Output.puts("LLM Error: #{e.message}", type: :error)
+            LlmTeam::Output.puts("Please ensure your OPENROUTER_API_KEY environment variable is set.", type: :warning)
+            LlmTeam::Output.puts(e.backtrace.join("\n"), type: :debug) if ENV["DEBUG"]
           rescue => e
-            puts "\n❌ Unexpected Error: #{e.class} - #{e.message}".red.bold
-            puts e.backtrace.join("\n")
+            LlmTeam::Output.puts("Unexpected Error: #{e.class} - #{e.message}", type: :error)
+            LlmTeam::Output.puts(e.backtrace.join("\n"), type: :debug)
           end
         end
       end
 
       def run_single_query_mode(primary_agent)
         query = @options[:query]
-        puts "\n🤖 LLM Team - Single Query Mode".blue.bold
-        puts "=" * 50
-        puts "Query: #{query}".green
+        LlmTeam::Output.puts("LLM Team - Single Query Mode", type: :app)
+        Kernel.puts "=" * 50
+        LlmTeam::Output.puts("Query: #{query}", type: :app, color: :green)
         
         if @options[:verbose]
-          puts "\n🔧 Configuration:".cyan
-          puts "  Model: #{@options[:model] || 'deepseek/deepseek-chat-v3.1 (default)'}"
-          puts "  Max Iterations: #{@options[:max_iterations]}"
-          puts "  History Behavior: #{@options[:history_behavior]}"
+          LlmTeam::Output.puts("Configuration:", type: :debug)
+          LlmTeam::Output.puts("  Model: #{@options[:model] || 'deepseek/deepseek-chat-v3.1 (default)'}", type: :debug)
+          LlmTeam::Output.puts("  Max Iterations: #{@options[:max_iterations]}", type: :debug)
+          LlmTeam::Output.puts("  History Behavior: #{@options[:history_behavior]}", type: :debug)
         end
         
-        puts "=" * 50
+        Kernel.puts "=" * 50
 
         # Reset statistics for accurate tracking
         primary_agent.reset_all_stats
 
         # Process the single query
         begin
-          puts "\n🔄 Processing your request...".yellow.bold
-          puts "─" * 50
+          LlmTeam::Output.puts("Processing your request...", type: :workflow, color: [:yellow, :bold])
+          Kernel.puts "─" * 50
 
           final_answer = primary_agent.respond(query)
 
-          puts "\n" + "=" * 50
-          puts "🎯 FINAL ANSWER:".green.bold
-          puts "=" * 50
-          puts final_answer
-          puts "=" * 50
+          LlmTeam::Output.final_answer(final_answer)
         rescue OpenAI::Error => e
-          puts "\n❌ LLM Error: #{e.message}".red.bold
-          puts "Please ensure your OPENROUTER_API_KEY environment variable is set.".yellow
-          puts e.backtrace.join("\n") if ENV["DEBUG"]
+          LlmTeam::Output.puts("LLM Error: #{e.message}", type: :error)
+          LlmTeam::Output.puts("Please ensure your OPENROUTER_API_KEY environment variable is set.", type: :warning)
+          LlmTeam::Output.puts(e.backtrace.join("\n"), type: :debug) if ENV["DEBUG"]
           exit 1
         rescue => e
-          puts "\n❌ Unexpected Error: #{e.class} - #{e.message}".red.bold
-          puts e.backtrace.join("\n")
+          LlmTeam::Output.puts("Unexpected Error: #{e.class} - #{e.message}", type: :error)
+          LlmTeam::Output.puts(e.backtrace.join("\n"), type: :debug)
           exit 1
         end
       end
@@ -165,7 +162,8 @@ module LlmTeam
           max_iterations: 20,
           model: nil,
           history_behavior: :last,
-          verbose: false
+          verbose: false,
+          quiet: false
         }
 
         while args.any?
@@ -178,31 +176,24 @@ module LlmTeam
           when "--version", "-v"
             show_version
             exit 0
-          when "--max-iterations", "-i"
-            @options[:max_iterations] = args.shift&.to_i || 20
           when "--model", "-m"
             @options[:model] = args.shift
             if @options[:model].nil?
-              puts "❌ --model requires a model name".red
-              exit 1
-            end
-          when "--history", "-H"
-            behavior = args.shift&.to_sym
-            if [:none, :last, :full].include?(behavior)
-              @options[:history_behavior] = behavior
-            else
-              puts "❌ Invalid history behavior: #{behavior}. Must be none, last, or full".red
+              LlmTeam::Output.puts("--model requires a model name", type: :error)
               exit 1
             end
           when "--agents-path"
             path = args.shift
             if path.nil?
-              puts "❌ --agents-path requires a path".red
+              LlmTeam::Output.puts("--agents-path requires a path", type: :error)
               exit 1
             end
             LlmTeam.configuration.auxiliary_agents_path = path
           when "--verbose"
             @options[:verbose] = true
+          when "--quiet"
+            @options[:quiet] = true
+            @options[:verbose] = false  # quiet overrides verbose
           when "--query", "-q"
             # Non-interactive mode with single query
             query = args.shift
@@ -210,12 +201,12 @@ module LlmTeam
               @options[:query] = query
               @options[:interactive] = false
             else
-              puts "❌ --query requires a query string".red
+              LlmTeam::Output.puts("--query requires a query string", type: :error)
               exit 1
             end
           else
             if arg.start_with?("-")
-              puts "❌ Unknown option: #{arg}".red
+              LlmTeam::Output.puts("Unknown option: #{arg}", type: :error)
               show_help
               exit 1
             else
@@ -239,18 +230,16 @@ module LlmTeam
           Options:
             -h, --help              Show this help message
             -v, --version           Show version information
-            -i, --max-iterations N  Set maximum iterations (default: 20)
-            -m, --model MODEL       Set LLM model (default: deepseek/deepseek-chat-v3.1)
-            -H, --history BEHAVIOR  Set history behavior: none, last, full (default: last)
+            -m, --model MODEL       Set LLM model (default: #{LlmTeam::Configuration::DEFAULT_MODEL})
             --agents-path PATH      Set path for auxiliary agents
             --verbose               Enable verbose output
+            --quiet                 Enable quiet output (minimal output)
             -q, --query QUERY       Run in non-interactive mode with single query
 
           Examples:
             llm_team                                    # Interactive mode
             llm_team "What is machine learning?"        # Single query mode
             llm_team -q "Explain quantum computing"     # Single query mode
-            llm_team -i 10 -H full                     # Custom iterations and history
             llm_team --model "gpt-4" --verbose         # Custom model with verbose output
             llm_team --agents-path ./my_agents         # Load auxiliary agents from directory
 

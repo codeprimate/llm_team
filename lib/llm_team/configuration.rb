@@ -19,6 +19,9 @@ module LlmTeam
     # Logging Configuration
     attr_accessor :log_level
 
+    # Output Configuration
+    attr_accessor :verbose, :quiet
+
     DEFAULT_MODEL = "google/gemini-2.5-flash"
     DEFAULT_MAX_ITERATIONS = 5
     DEFAULT_TEMPERATURE = 0.7
@@ -29,6 +32,8 @@ module LlmTeam
     DEFAULT_TIMEOUT = 30
     DEFAULT_LOG_LEVEL = :info
     DEFAULT_API_BASE_URL = "https://openrouter.ai/api/v1"
+    DEFAULT_VERBOSE = false
+    DEFAULT_QUIET = false
 
     def initialize
       # API Configuration
@@ -51,6 +56,13 @@ module LlmTeam
 
       # Logging Configuration
       @log_level = ENV.fetch("LLM_TEAM_LOG_LEVEL", DEFAULT_LOG_LEVEL.to_s).to_sym
+
+      # Output Configuration
+      @verbose = ENV.fetch("LLM_TEAM_VERBOSE", DEFAULT_VERBOSE.to_s).downcase == "true"
+      @quiet = ENV.fetch("LLM_TEAM_QUIET", DEFAULT_QUIET.to_s).downcase == "true"
+
+      # Handle mutual exclusion: quiet overrides verbose
+      @verbose = false if @quiet
     end
 
     # Validation
@@ -92,7 +104,8 @@ module LlmTeam
         retry_delay: @retry_delay,
         timeout: @timeout,
         log_level: @log_level,
-        enable_performance_tracking: @enable_performance_tracking
+        verbose: @verbose,
+        quiet: @quiet
       }
     end
 
