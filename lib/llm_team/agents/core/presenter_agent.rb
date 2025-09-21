@@ -13,6 +13,9 @@ module LlmTeam
       # - Formats agent results with clear section headers for context
       # - Writes as if improved version is the original response (no mention of iterations)
       class PresenterAgent < LlmTeam::Core::Agent
+        # Override default temperature for consistent, polished output
+        DEFAULT_TEMPERATURE = 0.2
+
         SYSTEM_PROMPT = <<~PROMPT
           You are a final presentation assistant. Your task is to synthesize information
           provided by various agents into a single, coherent, and well-formatted answer
@@ -41,7 +44,7 @@ module LlmTeam
             "--- Output from #{agent_name} ---\n#{result}\n"
           end.join("\n")
 
-          process_with_tools("Original User Query:\n#{original_query}\n\nAgent Outputs to synthesize:\n#{result_string.strip}", temperature: 0.2)
+          process_with_tools("Original User Query:\n#{original_query}\n\nAgent Outputs to synthesize:\n#{result_string.strip}")
         end
 
         # Tool schema for final response synthesis

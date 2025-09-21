@@ -79,7 +79,7 @@ module LlmTeam
           puts "\n🎯 Processing query: #{user_query}".blue.bold
 
           # Execute structured workflow via tool calling
-          result = process_with_tools(user_query, temperature: 0.7)
+          result = process_with_tools(user_query)
 
           puts "\n🎯 CONVERSATION COMPLETE - Total tokens used: #{get_total_token_usage}".green.bold
 

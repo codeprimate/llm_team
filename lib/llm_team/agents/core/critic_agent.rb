@@ -13,6 +13,9 @@ module LlmTeam
       # - Makes iteration decisions based on MAJOR issues or research needs
       # - Includes research needs assessment to guide next iteration scope
       class CriticAgent < LlmTeam::Core::Agent
+        # Override default temperature for consistent, deterministic feedback
+        DEFAULT_TEMPERATURE = 0.3
+
         SYSTEM_PROMPT = <<~PROMPT
           You are a constructive critic and quality reviewer in an iterative improvement workflow. 
           Your goal is to provide thoughtful, balanced feedback on the given content by comparing it 
@@ -81,7 +84,7 @@ module LlmTeam
         # Content critique with structured feedback and iteration guidance
         def critique_content(content:, original_request:, criteria: nil)
           criteria_text = criteria ? "Focus on: #{criteria}" : "Provide general constructive feedback"
-          process_with_tools("#{criteria_text}\n\nOriginal User Request:\n#{original_request}\n\nContent to critique:\n#{content}", temperature: 0.3)
+          process_with_tools("#{criteria_text}\n\nOriginal User Request:\n#{original_request}\n\nContent to critique:\n#{content}")
         end
 
         # Tool schema for structured critique workflow

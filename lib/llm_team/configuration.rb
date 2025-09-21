@@ -5,7 +5,10 @@ require_relative "errors"
 module LlmTeam
   class Configuration
     # API Configuration
-    attr_accessor :api_key, :api_base_url, :model, :temperature, :max_iterations
+    attr_accessor :api_key, :api_base_url, :model, :max_iterations
+
+    # Model Parameters Configuration
+    attr_accessor :temperature, :max_tokens
 
     # Agent Configuration
     attr_accessor :default_history_behavior, :auxiliary_agents
@@ -21,8 +24,11 @@ module LlmTeam
       @api_key = ENV["OPENROUTER_API_KEY"]
       @api_base_url = ENV["OPENROUTER_API_BASE_URL"] || "https://openrouter.ai/api/v1"
       @model = ENV["LLM_TEAM_MODEL"] || "deepseek/deepseek-chat-v3.1"
-      @temperature = (ENV["LLM_TEAM_TEMPERATURE"] || "0.7").to_f
       @max_iterations = (ENV["LLM_TEAM_MAX_ITERATIONS"] || "5").to_i
+
+      # Model Parameters Configuration
+      @temperature = (ENV["LLM_TEAM_TEMPERATURE"] || "0.7").to_f
+      @max_tokens = (ENV["LLM_TEAM_MAX_TOKENS"] || "4096").to_i
 
       # Agent Configuration
       @default_history_behavior = (ENV["LLM_TEAM_HISTORY_BEHAVIOR"] || "none").to_sym
@@ -46,9 +52,15 @@ module LlmTeam
         raise ConfigurationError, "Invalid history behavior: #{@default_history_behavior}. Must be :none, :last, or :full"
       end
 
+      # Model parameter validation
       unless (0.0..2.0).cover?(@temperature)
         raise ConfigurationError, "Temperature must be between 0.0 and 2.0, got: #{@temperature}"
       end
+
+      unless @max_tokens.positive?
+        raise ConfigurationError, "Max tokens must be positive, got: #{@max_tokens}"
+      end
+
 
       unless @max_iterations.positive?
         raise ConfigurationError, "Max iterations must be positive, got: #{@max_iterations}"
@@ -68,14 +80,24 @@ module LlmTeam
       @auxiliary_agents.include?(agent_name.to_s)
     end
 
+    # Model parameter helpers
+    def model_parameters
+      {
+        temperature: @temperature,
+        max_tokens: @max_tokens
+      }
+    end
+
+
     # Configuration helpers
     def to_hash
       {
         api_key: @api_key,
         api_base_url: @api_base_url,
         model: @model,
-        temperature: @temperature,
         max_iterations: @max_iterations,
+        temperature: @temperature,
+        max_tokens: @max_tokens,
         default_history_behavior: @default_history_behavior,
         auxiliary_agents: @auxiliary_agents.dup,
         max_retries: @max_retries,

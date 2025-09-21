@@ -10,18 +10,26 @@ module LlmTeam
     # - Tool discovery uses class-level schema introspection rather than method reflection
     # - Retry logic handles both API failures and tool-not-found scenarios differently
     class Agent
-      DEFAULT_MODEL = "deepseek/deepseek-chat-v3.1".freeze
-
       attr_reader :name, :llm_client, :available_tools, :conversation, :max_iterations
 
-      def initialize(name, model: DEFAULT_MODEL, history_behavior: :none, max_iterations: 5)
+      # Default model parameters - can be overridden by subclasses
+      DEFAULT_TEMPERATURE = 0.7
+      DEFAULT_MAX_TOKENS = nil
+
+      def initialize(name, model: nil, history_behavior: nil, max_iterations: nil)
         @name = name
+        config = LlmTeam.configuration
+        
+        # Use configuration values with fallbacks
+        @model = model || config.model
+        @max_iterations = max_iterations || config.max_iterations
+        history_behavior ||= config.default_history_behavior
+        
         @llm_client = OpenAI::Client.new(
-          access_token: ENV["OPENROUTER_API_KEY"],
-          uri_base: "https://openrouter.ai/api/v1"
+          access_token: config.api_key,
+          uri_base: config.api_base_url
         )
-        @model = model
-        @max_iterations = max_iterations
+        
         @total_tokens_used = 0
         @available_tools = {} # Tool registry: name => agent_instance
         @conversation = Conversation.new(history_behavior: history_behavior)
@@ -32,6 +40,15 @@ module LlmTeam
       # Dynamic system prompt resolution - subclasses can define SYSTEM_PROMPT constant
       def system_prompt
         self.class.const_defined?(:SYSTEM_PROMPT) ? self.class::SYSTEM_PROMPT : nil
+      end
+
+      # Get agent-specific model parameters with fallbacks to configuration
+      def model_parameters
+        config = LlmTeam.configuration
+        {
+          temperature: self.class::DEFAULT_TEMPERATURE || config.temperature,
+          max_tokens: self.class::DEFAULT_MAX_TOKENS || config.max_tokens
+        }
       end
 
       # Convert LLM API role strings to our role constants
@@ -67,8 +84,11 @@ module LlmTeam
       # - Manages dual conversation tracking: ephemeral vs persistent history
       # - Handles tool-not-found retries by decrementing iteration counter
       # - Applies history cleanup after completion regardless of success/failure
-      def process_with_tools(initial_message, temperature: 0.7, history_behavior: nil)
+      def process_with_tools(initial_message, temperature: nil, history_behavior: nil)
         history_behavior ||= @conversation.history_behavior
+        
+        # Use agent's default temperature if not provided
+        temperature ||= model_parameters[:temperature]
 
         # Build conversation context from persistent history + new message
         conversation_messages = @conversation.build_conversation_for_llm(system_prompt, initial_message, history_behavior: history_behavior)
@@ -84,10 +104,9 @@ module LlmTeam
           iteration += 1
           puts "\n🔄 #{name} - Iteration #{iteration}".blue.bold
 
-          # Prepare call_llm arguments
-          call_args = {
-            temperature: temperature
-          }
+          # Prepare call_llm arguments with agent's model parameters
+          call_args = model_parameters.dup
+          call_args[:temperature] = temperature if temperature
 
           # Only add tool-related arguments if tools are registered
           if @available_tools.any?
@@ -168,7 +187,10 @@ module LlmTeam
       # - Only retries on nil responses (API failures), not on tool-not-found errors
       # - Uses fixed 1-second delay (not exponential backoff)
       # - Returns nil after max retries, triggering higher-level error handling
-      def call_llm_with_retry(messages, temperature: 0.7, tool_choice: nil, tools: [], max_retries: 3)
+      def call_llm_with_retry(messages, temperature: nil, tool_choice: nil, tools: [], max_retries: nil)
+        temperature ||= model_parameters[:temperature]
+        max_retries ||= LlmTeam.configuration.max_retries
+        
         retry_count = 0
 
         loop do
@@ -196,15 +218,16 @@ module LlmTeam
       # - Measures and accumulates latency across all calls for this agent
       # - Returns nil on any API error (triggers retry logic in caller)
       # - Tracks token usage per agent for cost monitoring
-      def call_llm(messages, temperature: 0.7, tool_choice: nil, tools: [])
+      def call_llm(messages, temperature: nil, tool_choice: nil, tools: [], **model_params)
+        temperature ||= model_parameters[:temperature]
         puts "  📡 Calling LLM (#{messages.size} messages)".cyan
         puts "  🔧 Tools: #{tools.any? ? tools.map { |t| t[:function][:name] }.join(", ") : "None"}".light_black
 
-        request_params = {
-          model: @model,
-          messages: messages,
-          temperature: temperature
-        }
+        # Start with agent's default model parameters
+        request_params = model_parameters.merge(model_params)
+        request_params[:model] = @model
+        request_params[:messages] = messages
+        request_params[:temperature] = temperature
 
         # Only include tool parameters when tools are actually registered
         request_params[:tools] = tools if tools.any?
