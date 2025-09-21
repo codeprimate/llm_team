@@ -8,7 +8,7 @@ module LlmTeam
     attr_accessor :api_key, :api_base_url, :model, :max_iterations
 
     # Model Parameters Configuration
-    attr_accessor :temperature, :max_tokens
+    attr_accessor :temperature
 
     # Agent Configuration
     attr_accessor :default_history_behavior, :auxiliary_agents, :auxiliary_agents_path
@@ -28,7 +28,6 @@ module LlmTeam
 
       # Model Parameters Configuration
       @temperature = (ENV["LLM_TEAM_TEMPERATURE"] || "0.7").to_f
-      @max_tokens = (ENV["LLM_TEAM_MAX_TOKENS"] || "4096").to_i
 
       # Agent Configuration
       @default_history_behavior = (ENV["LLM_TEAM_HISTORY_BEHAVIOR"] || "none").to_sym
@@ -59,11 +58,6 @@ module LlmTeam
         raise ConfigurationError, "Temperature must be between 0.0 and 2.0, got: #{@temperature}"
       end
 
-      unless @max_tokens.positive?
-        raise ConfigurationError, "Max tokens must be positive, got: #{@max_tokens}"
-      end
-
-
       unless @max_iterations.positive?
         raise ConfigurationError, "Max iterations must be positive, got: #{@max_iterations}"
       end
@@ -85,8 +79,7 @@ module LlmTeam
     # Model parameter helpers
     def model_parameters
       {
-        temperature: @temperature,
-        max_tokens: @max_tokens
+        temperature: @temperature
       }
     end
 
@@ -99,7 +92,6 @@ module LlmTeam
         model: @model,
         max_iterations: @max_iterations,
         temperature: @temperature,
-        max_tokens: @max_tokens,
         default_history_behavior: @default_history_behavior,
         auxiliary_agents: @auxiliary_agents.dup,
         auxiliary_agents_path: @auxiliary_agents_path,

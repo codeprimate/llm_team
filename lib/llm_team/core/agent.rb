@@ -14,7 +14,6 @@ module LlmTeam
 
       # Default model parameters - can be overridden by subclasses
       DEFAULT_TEMPERATURE = 0.7
-      DEFAULT_MAX_TOKENS = nil
 
       def initialize(name, model: nil, history_behavior: nil, max_iterations: nil)
         @name = name
@@ -49,8 +48,7 @@ module LlmTeam
       def model_parameters
         config = LlmTeam.configuration
         {
-          temperature: self.class::DEFAULT_TEMPERATURE || config.temperature,
-          max_tokens: self.class::DEFAULT_MAX_TOKENS || config.max_tokens
+          temperature: self.class::DEFAULT_TEMPERATURE || config.temperature
         }
       end
 
