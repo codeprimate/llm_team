@@ -11,38 +11,46 @@ module LlmTeam
     attr_accessor :temperature
 
     # Agent Configuration
-    attr_accessor :default_history_behavior, :auxiliary_agents, :auxiliary_agents_path
+    attr_accessor :default_history_behavior, :auxiliary_agents_path
 
     # Performance Configuration
     attr_accessor :max_retries, :retry_delay, :timeout
 
     # Logging Configuration
-    attr_accessor :log_level, :enable_performance_tracking
+    attr_accessor :log_level
+
+    DEFAULT_MODEL = "google/gemini-2.5-pro"
+    DEFAULT_MAX_ITERATIONS = 5
+    DEFAULT_TEMPERATURE = 0.7
+    DEFAULT_HISTORY_BEHAVIOR = :none
+    DEFAULT_AUXILIARY_AGENTS_PATH = File.join(File.dirname(__FILE__), "agents", "auxiliary")
+    DEFAULT_MAX_RETRIES = 3
+    DEFAULT_RETRY_DELAY = 1
+    DEFAULT_TIMEOUT = 30
+    DEFAULT_LOG_LEVEL = :info
+    DEFAULT_API_BASE_URL = "https://openrouter.ai/api/v1"
 
     def initialize
       # API Configuration
       @api_key = ENV["OPENROUTER_API_KEY"]
-      @api_base_url = ENV["OPENROUTER_API_BASE_URL"] || "https://openrouter.ai/api/v1"
-      @model = ENV["LLM_TEAM_MODEL"] || "deepseek/deepseek-chat-v3.1"
-      @max_iterations = (ENV["LLM_TEAM_MAX_ITERATIONS"] || "5").to_i
+      @api_base_url = ENV.fetch("OPENROUTER_API_BASE_URL", DEFAULT_API_BASE_URL)
+      @model = ENV.fetch("LLM_TEAM_MODEL", DEFAULT_MODEL)
+      @max_iterations = ENV.fetch("LLM_TEAM_MAX_ITERATIONS", DEFAULT_MAX_ITERATIONS.to_s).to_i
 
       # Model Parameters Configuration
-      @temperature = (ENV["LLM_TEAM_TEMPERATURE"] || "0.7").to_f
+      @temperature = ENV.fetch("LLM_TEAM_TEMPERATURE", DEFAULT_TEMPERATURE.to_s).to_f
 
       # Agent Configuration
-      @default_history_behavior = (ENV["LLM_TEAM_HISTORY_BEHAVIOR"] || "none").to_sym
-      @auxiliary_agents = []
-      @auxiliary_agents_path = ENV["LLM_TEAM_AUXILIARY_AGENTS_PATH"] # or path relative to the current file
-      @auxiliary_agents_path = File.join(File.dirname(__FILE__), "agents", "auxiliary") if @auxiliary_agents_path.nil? || @auxiliary_agents_path.empty?
+      @default_history_behavior = ENV.fetch("LLM_TEAM_HISTORY_BEHAVIOR", DEFAULT_HISTORY_BEHAVIOR.to_s).to_sym
+      @auxiliary_agents_path = ENV.fetch("LLM_TEAM_AUXILIARY_AGENTS_PATH", DEFAULT_AUXILIARY_AGENTS_PATH)
 
       # Performance Configuration
-      @max_retries = (ENV["LLM_TEAM_MAX_RETRIES"] || "3").to_i
-      @retry_delay = (ENV["LLM_TEAM_RETRY_DELAY"] || "1").to_f
-      @timeout = (ENV["LLM_TEAM_TIMEOUT"] || "30").to_i
+      @max_retries = ENV.fetch("LLM_TEAM_MAX_RETRIES", DEFAULT_MAX_RETRIES.to_s).to_i
+      @retry_delay = ENV.fetch("LLM_TEAM_RETRY_DELAY", DEFAULT_RETRY_DELAY.to_s).to_f
+      @timeout = ENV.fetch("LLM_TEAM_TIMEOUT", DEFAULT_TIMEOUT.to_s).to_i
 
       # Logging Configuration
-      @log_level = (ENV["LLM_TEAM_LOG_LEVEL"] || "info").to_sym
-      @enable_performance_tracking = ENV["LLM_TEAM_PERFORMANCE_TRACKING"] != "false"
+      @log_level = ENV.fetch("LLM_TEAM_LOG_LEVEL", DEFAULT_LOG_LEVEL.to_s).to_sym
     end
 
     # Validation
@@ -63,26 +71,12 @@ module LlmTeam
       end
     end
 
-    # Auxiliary agent management
-    def enable_auxiliary_agent(agent_name)
-      @auxiliary_agents << agent_name.to_s unless @auxiliary_agents.include?(agent_name.to_s)
-    end
-
-    def disable_auxiliary_agent(agent_name)
-      @auxiliary_agents.delete(agent_name.to_s)
-    end
-
-    def auxiliary_agent_enabled?(agent_name)
-      @auxiliary_agents.include?(agent_name.to_s)
-    end
-
     # Model parameter helpers
     def model_parameters
       {
         temperature: @temperature
       }
     end
-
 
     # Configuration helpers
     def to_hash
@@ -93,7 +87,6 @@ module LlmTeam
         max_iterations: @max_iterations,
         temperature: @temperature,
         default_history_behavior: @default_history_behavior,
-        auxiliary_agents: @auxiliary_agents.dup,
         auxiliary_agents_path: @auxiliary_agents_path,
         max_retries: @max_retries,
         retry_delay: @retry_delay,

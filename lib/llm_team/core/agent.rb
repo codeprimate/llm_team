@@ -315,7 +315,7 @@ module LlmTeam
 
       # Dynamic tool method invocation with keyword argument spreading
       def execute_tool(tool_agent, function_name, arguments)
-        tool_agent.public_send(function_name, **arguments)
+        tool_agent.new.public_send(function_name, **arguments)
       end
 
       # Extract tool execution results from conversation history
@@ -388,24 +388,50 @@ module LlmTeam
       # Load and register a single auxiliary agent file
       def load_auxiliary_agent_file(file)
         begin
+          config = LlmTeam.configuration
+          auxiliary_agents_path = File.expand_path(config.auxiliary_agents_path)
+          
+          # Get the relative path from the auxiliary agents directory
+          relative_path = file.sub(auxiliary_agents_path + "/", "").gsub(/\.rb$/, "")
+          
+          # Build namespace from directory structure and filename
+          # Examples:
+          # "primary_agent/extra_tool_agent.rb" -> ["PrimaryAgent", "ExtraToolAgent"]
+          # "primary_agent/extra_tool_agent_subtool_agent.rb" -> ["PrimaryAgent", "ExtraToolAgent", "SubtoolAgent"]
+          namespace_parts = relative_path.split("/").map do |part|
+            part.split("_").map(&:capitalize).join
+          end
+          
+          # Build full class name
+          full_class_name = "LlmTeam::Agents::Auxiliary::#{namespace_parts.join("::")}"
+          
+          # Check if this auxiliary agent belongs to THIS agent's namespace
+          # e.g., PrimaryAgent should only load agents under LlmTeam::Agents::Auxiliary::PrimaryAgent::*
+          this_agent_class_name = self.class.name.split("::").last
+          expected_namespace_prefix = "LlmTeam::Agents::Auxiliary::#{this_agent_class_name}::"
+          
+          unless full_class_name.start_with?(expected_namespace_prefix)
+            puts "⚠️  Skipping #{File.basename(file)}: Namespace #{full_class_name} doesn't match this agent (#{this_agent_class_name})".yellow
+            return
+          end
+          
+          # Only require if namespace matches
           require file
           
-          # Extract class name from file path
-          # e.g., "web_search_agent.rb" -> "WebSearchAgent"
-          relative_path = file.gsub(/.*\//, "").gsub(/\.rb$/, "")
-          class_name = relative_path.split("_").map(&:capitalize).join
-          
-          # Full namespace: LlmTeam::Agents::Auxiliary::{ClassName}
-          full_class_name = "LlmTeam::Agents::Auxiliary::#{class_name}"
-          
-          agent_class = Object.const_get(full_class_name)
+          # Check if the expected class exists in the derived namespace
+          begin
+            agent_class = full_class_name.constantize
+          rescue NameError
+            puts "⚠️  Skipping #{File.basename(file)}: Expected class #{full_class_name} not found".yellow
+            return
+          end
           
           if validate_auxiliary_agent_class(agent_class)
             tool_name = agent_class.tool_schema[:function][:name].to_sym
-            agent_instance = agent_class.new(model: @model)
+            agent_instance = agent_class.new
             register_tool(tool_name, agent_instance)
             
-            puts "✅ Loaded auxiliary agent: #{tool_name} (#{class_name})".green
+            puts "✅ Loaded auxiliary agent: #{tool_name} (#{full_class_name})".green
           end
           
         rescue => e
