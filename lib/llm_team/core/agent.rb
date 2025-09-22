@@ -170,9 +170,8 @@ module LlmTeam
             )
             LlmTeam::Output.puts("#{name} completed with response", type: :status)
             LlmTeam::Output.puts("Total latency: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} LLM calls)", type: :performance)
-            LlmTeam::Output.puts("#{name} Response:", type: :status, color: :yellow)
-            Kernel.puts message["content"]
-            Kernel.puts "\n" + "─" * 50
+            LlmTeam::Output.puts(message["content"], type: :data, color: :light_black)
+            LlmTeam::Output.puts("\n" + "─" * 50, type: :data, color: :light_black)
 
             # Apply history cleanup based on behavior
             @conversation.cleanup_conversation_history(history_behavior)
@@ -378,29 +377,30 @@ module LlmTeam
 
       private
 
-      # Load auxiliary agents from configured path
+      # Load auxiliary agents from configured paths
       def load_auxiliary_agents
         config = LlmTeam.configuration
-        return unless config.auxiliary_agents_path
+        return unless config.auxiliary_agents_paths&.any?
         
-        auxiliary_agents_path = File.expand_path(config.auxiliary_agents_path)
-        return unless Dir.exist?(auxiliary_agents_path)
-        
-        load_auxiliary_agents_from_path(auxiliary_agents_path)
+        config.auxiliary_agents_paths.each do |path|
+          auxiliary_agents_path = File.expand_path(path)
+          next unless Dir.exist?(auxiliary_agents_path)
+          
+          load_auxiliary_agents_from_path(auxiliary_agents_path)
+        end
       end
 
       # Scan directory and load all auxiliary agent files
       def load_auxiliary_agents_from_path(path)
         Dir.glob(File.join(path, "**", "*_agent.rb")).each do |file|
-          load_auxiliary_agent_file(file)
+          load_auxiliary_agent_file(file, path)
         end
       end
 
       # Load and register a single auxiliary agent file
-      def load_auxiliary_agent_file(file)
+      def load_auxiliary_agent_file(file, base_path)
         begin
-          config = LlmTeam.configuration
-          auxiliary_agents_path = File.expand_path(config.auxiliary_agents_path)
+          auxiliary_agents_path = File.expand_path(base_path)
           
           # Get the relative path from the auxiliary agents directory
           relative_path = file.sub(auxiliary_agents_path + "/", "").gsub(/\.rb$/, "")

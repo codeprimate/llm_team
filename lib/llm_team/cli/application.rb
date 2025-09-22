@@ -233,7 +233,7 @@ module LlmTeam
               LlmTeam::Output.puts("--agents-path requires a path", type: :error)
               exit 1
             end
-            LlmTeam.configuration.auxiliary_agents_path = path
+            LlmTeam.configuration.add_auxiliary_agents_path(path)
           when "--verbose"
             @options[:verbose] = true
           when "--quiet"
@@ -276,7 +276,7 @@ module LlmTeam
             -h, --help              Show this help message
             -v, --version           Show version information
             -m, --model MODEL       Set LLM model (default: #{LlmTeam::Configuration::DEFAULT_MODEL})
-            --agents-path PATH      Set path for auxiliary agents
+            --agents-path PATH      Add additional path for auxiliary agents
             --verbose               Enable verbose output
             --quiet                 Enable quiet output (minimal output)
             -q, --query QUERY       Run in non-interactive mode with single query
@@ -286,7 +286,7 @@ module LlmTeam
             llm_team "What is machine learning?"        # Single query mode
             llm_team -q "Explain quantum computing"     # Single query mode
             llm_team --model "gpt-4" --verbose         # Custom model with verbose output
-            llm_team --agents-path ./my_agents         # Load auxiliary agents from directory
+            llm_team --agents-path ./my_agents         # Load auxiliary agents from additional directory
 
           Environment Variables:
             OPENROUTER_API_KEY               Your OpenRouter API key (required)

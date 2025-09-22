@@ -11,7 +11,7 @@ module LlmTeam
     attr_accessor :temperature
 
     # Agent Configuration
-    attr_accessor :default_history_behavior, :auxiliary_agents_path
+    attr_accessor :default_history_behavior, :auxiliary_agents_paths
 
     # Performance Configuration
     attr_accessor :max_retries, :retry_delay, :timeout
@@ -47,7 +47,7 @@ module LlmTeam
 
       # Agent Configuration
       @default_history_behavior = ENV.fetch("LLM_TEAM_HISTORY_BEHAVIOR", DEFAULT_HISTORY_BEHAVIOR.to_s).to_sym
-      @auxiliary_agents_path = ENV.fetch("LLM_TEAM_AUXILIARY_AGENTS_PATH", DEFAULT_AUXILIARY_AGENTS_PATH)
+      @auxiliary_agents_paths = [ENV.fetch("LLM_TEAM_AUXILIARY_AGENTS_PATH", DEFAULT_AUXILIARY_AGENTS_PATH)]
 
       # Performance Configuration
       @max_retries = ENV.fetch("LLM_TEAM_MAX_RETRIES", DEFAULT_MAX_RETRIES.to_s).to_i
@@ -99,7 +99,7 @@ module LlmTeam
         max_iterations: @max_iterations,
         temperature: @temperature,
         default_history_behavior: @default_history_behavior,
-        auxiliary_agents_path: @auxiliary_agents_path,
+        auxiliary_agents_paths: @auxiliary_agents_paths,
         max_retries: @max_retries,
         retry_delay: @retry_delay,
         timeout: @timeout,
@@ -111,6 +111,11 @@ module LlmTeam
 
     def reset!
       initialize
+    end
+    # Add an additional auxiliary agents path
+    def add_auxiliary_agents_path(path)
+      @auxiliary_agents_paths ||= []
+      @auxiliary_agents_paths << path unless @auxiliary_agents_paths.include?(path)
     end
   end
 end

@@ -38,7 +38,7 @@ llm_team "What is machine learning?"
 llm_team [options] [query]
 
   -m, --model MODEL       Set LLM model (default: google/gemini-2.5-pro)
-  --agent-path            Path to auxillary agent definitions
+  --agents-path           Additional path for auxiliary agent definitions
   --verbose               Enable verbose output
   -h, --help              Show help message
 ```
