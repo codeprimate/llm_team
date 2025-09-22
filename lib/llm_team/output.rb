@@ -17,7 +17,7 @@ module LlmTeam
       
       # Technical Level
       technical:     { icon: "📡", color: :cyan,            indent: 2, level: :verbose },
-      performance:   { icon: "⏱️", color: :light_black,     indent: 2, level: :normal },
+      performance:   { icon: "⏱️", color: :light_black,     indent: 2, level: :verbose },
       data:          { icon: "📊", color: :light_black,     indent: 4, level: :verbose },
       
       # Error/Warning Level - context-sensitive

@@ -97,7 +97,7 @@ module LlmTeam
           # Validation: Ensure we have a proper response
           validated_result = validate_and_extract_final_response(result)
 
-          LlmTeam::Output.puts("CONVERSATION COMPLETE - Total tokens used: #{get_total_token_usage}", type: :status)
+          LlmTeam::Output.puts("CONVERSATION COMPLETE - Total tokens used: #{get_total_token_usage}", type: :status, indent: 0)
 
           report_latency
           validated_result
@@ -146,10 +146,6 @@ module LlmTeam
 
         # Comprehensive latency reporting across all agents with averages
         def report_latency
-          LlmTeam::Output.puts("LATENCY REPORT", type: :performance)
-          Kernel.puts "─" * 30
-
-          # PrimaryAgent latency
           LlmTeam::Output.puts("PrimaryAgent: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} calls)", type: :performance)
 
           # Tool agents latency aggregation
@@ -170,16 +166,12 @@ module LlmTeam
           # Total system latency
           total_latency = @total_latency_ms + total_tool_latency
           total_calls = @llm_calls_count + total_tool_calls
-
-          Kernel.puts "─" * 30
-          LlmTeam::Output.puts("TOTAL: #{format_latency(total_latency)} (#{total_calls} LLM calls)", type: :performance, color: [:green, :bold])
+          LlmTeam::Output.puts("TOTAL: #{format_latency(total_latency)} (#{total_calls} LLM calls)", type: :status, color: :green, level: :normal)
 
           if total_calls > 0
             avg_latency = (total_latency / total_calls).round(2)
             LlmTeam::Output.puts("Average per call: #{format_latency(avg_latency)}", type: :performance, color: :light_black)
           end
-
-          Kernel.puts "─" * 30
         end
 
         private

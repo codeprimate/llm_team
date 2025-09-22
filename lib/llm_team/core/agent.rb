@@ -171,7 +171,7 @@ module LlmTeam
             LlmTeam::Output.puts("#{name} completed with response", type: :status)
             LlmTeam::Output.puts("Total latency: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} LLM calls)", type: :performance)
             LlmTeam::Output.puts(message["content"], type: :data, color: :light_black)
-            LlmTeam::Output.puts("\n" + "─" * 50, type: :data, color: :light_black)
+            LlmTeam::Output.puts("─" * 50, type: :data, color: :light_black)
 
             # Apply history cleanup based on behavior
             @conversation.cleanup_conversation_history(history_behavior)

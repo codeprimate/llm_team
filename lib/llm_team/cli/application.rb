@@ -39,26 +39,23 @@ module LlmTeam
 
       def run_interactive_mode(primary_agent)
         LlmTeam::Output.puts("LLM Team Interactive Mode", type: :app)
-        Kernel.puts "=" * 50
-        LlmTeam::Output.puts("Welcome! You can now interact with the LLM team directly.", type: :app, color: :green)
+        LlmTeam::Output.puts("=" * 50, type: :app)
         LlmTeam::Output.puts("Type your questions or requests, and the team will work together to help you.", type: :app)
         
         if @options[:verbose]
           LlmTeam::Output.puts("Configuration:", type: :debug)
-          LlmTeam::Output.puts("  Model: #{@options[:model] || '#{LlmTeam::Configuration::DEFAULT_MODEL} (default)'}", type: :debug)
-          LlmTeam::Output.puts("  Max Iterations: #{@options[:max_iterations]}", type: :debug)
-          LlmTeam::Output.puts("  History Behavior: #{@options[:history_behavior]}", type: :debug)
+          LlmTeam::Output.puts("  Model: #{@options[:model] || LlmTeam::Configuration::DEFAULT_MODEL}", type: :debug)
         end
         
-        LlmTeam::Output.puts("Commands:", type: :user, color: :yellow)
-        LlmTeam::Output.puts("  'exit', 'quit', or 'q' - Exit the interactive mode", type: :user)
-        LlmTeam::Output.puts("  'help' - Show this help message", type: :user)
-        LlmTeam::Output.puts("  'clear' - Clear the screen and conversation history", type: :user)
-        LlmTeam::Output.puts("  'save' - Save the last query and response to a timestamped markdown file", type: :user)
-        Kernel.puts "\n" + "=" * 50
+        LlmTeam::Output.puts("Commands:", type: :app, color: :yellow)
+        LlmTeam::Output.puts("  'exit', 'quit', or 'q' - Exit the interactive mode", type: :app)
+        LlmTeam::Output.puts("  'help' - Show this help message", type: :app)
+        LlmTeam::Output.puts("  'clear' - Clear the screen and conversation history", type: :app)
+        LlmTeam::Output.puts("  'save' - Save the last query and response to a timestamped markdown file", type: :app)
+        LlmTeam::Output.puts("\n" + "=" * 50, type: :app)
 
         loop do
-          LlmTeam::Output.user_prompt("\n💬 You: ")
+          LlmTeam::Output.user_prompt("You: ")
           user_input = $stdin.gets&.chomp&.strip
 
           # Handle EOF (Ctrl+D) or nil input
@@ -111,9 +108,7 @@ module LlmTeam
 
           # Process user query with comprehensive error handling
           begin
-            LlmTeam::Output.puts("Processing your request...", type: :workflow, color: [:yellow, :bold])
-            Kernel.puts "─" * 50
-
+            LlmTeam::Output.puts("Querying Primary Agent...", type: :workflow, color: [:yellow, :bold])
             final_answer = primary_agent.respond(user_input)
             @last_response = final_answer
             @last_user_input = user_input
@@ -133,7 +128,6 @@ module LlmTeam
       def run_single_query_mode(primary_agent)
         query = @options[:query]
         LlmTeam::Output.puts("LLM Team - Single Query Mode", type: :app)
-        Kernel.puts "=" * 50
         LlmTeam::Output.puts("Query: #{query}", type: :app, color: :green)
         
         if @options[:verbose]
@@ -142,8 +136,6 @@ module LlmTeam
           LlmTeam::Output.puts("  Max Iterations: #{@options[:max_iterations]}", type: :debug)
           LlmTeam::Output.puts("  History Behavior: #{@options[:history_behavior]}", type: :debug)
         end
-        
-        Kernel.puts "=" * 50
 
         # Reset statistics for accurate tracking
         primary_agent.reset_all_stats
@@ -151,7 +143,6 @@ module LlmTeam
         # Process the single query
         begin
           LlmTeam::Output.puts("Processing your request...", type: :workflow, color: [:yellow, :bold])
-          Kernel.puts "─" * 50
 
           final_answer = primary_agent.respond(query)
 
