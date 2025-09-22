@@ -38,8 +38,6 @@ llm_team "What is machine learning?"
 llm_team [options] [query]
 
   -m, --model MODEL       Set LLM model (default: google/gemini-2.5-pro)
-  -H, --history BEHAVIOR  Set history behavior: none, last, full (default: last)
-  -i, --max-iterations N  Set maximum iterations (default: 20)
   --agent-path            Path to auxillary agent definitions
   --verbose               Enable verbose output
   -h, --help              Show help message
@@ -49,6 +47,7 @@ llm_team [options] [query]
 - `exit`, `quit`, `q` - Exit
 - `help` - Show help  
 - `clear` - Clear history
+- `save` - Save last query and response to timestamped markdown file
 
 ## Extension System
 

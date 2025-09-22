@@ -14,6 +14,8 @@ module LlmTeam
     class Application
       def initialize
         @options = {}
+        @last_response = nil
+        @last_user_input = nil
       end
 
       def run
@@ -52,6 +54,7 @@ module LlmTeam
         LlmTeam::Output.puts("  'exit', 'quit', or 'q' - Exit the interactive mode", type: :user)
         LlmTeam::Output.puts("  'help' - Show this help message", type: :user)
         LlmTeam::Output.puts("  'clear' - Clear the screen and conversation history", type: :user)
+        LlmTeam::Output.puts("  'save' - Save the last query and response to a timestamped markdown file", type: :user)
         Kernel.puts "\n" + "=" * 50
 
         loop do
@@ -85,6 +88,7 @@ module LlmTeam
             LlmTeam::Output.puts("  'exit', 'quit', or 'q' - Exit the interactive mode", type: :user)
             LlmTeam::Output.puts("  'help' - Show this help message", type: :user)
             LlmTeam::Output.puts("  'clear' - Clear the screen and conversation history", type: :user)
+            LlmTeam::Output.puts("  'save' - Save the last query and response to a timestamped markdown file", type: :user)
             LlmTeam::Output.puts("  Any other text - Send as a query to the LLM team", type: :user)
             next
           end
@@ -93,7 +97,15 @@ module LlmTeam
           if user_input.downcase == "clear"
             system("clear") || system("cls")
             primary_agent.clear_conversation
+            @last_response = nil
+            @last_user_input = nil
             LlmTeam::Output.puts("LLM Team Interactive Mode - Screen and conversation cleared", type: :app)
+            next
+          end
+
+          # Handle save command
+          if user_input.downcase == "save"
+            save_last_answer
             next
           end
 
@@ -103,6 +115,8 @@ module LlmTeam
             Kernel.puts "─" * 50
 
             final_answer = primary_agent.respond(user_input)
+            @last_response = final_answer
+            @last_user_input = user_input
 
             LlmTeam::Output.final_answer(final_answer)
           rescue OpenAI::Error => e
@@ -155,6 +169,37 @@ module LlmTeam
       end
 
       private
+
+      def save_last_answer
+        if @last_response.nil?
+          LlmTeam::Output.puts("No response to save. Please run a query first.", type: :warning)
+          return
+        end
+
+        # Generate timestamp filename in format: llm_team_YYYYMMDD_HHMMSS.md
+        timestamp = Time.now.strftime("%Y%m%d_%H%M%S")
+        filename = "llm_team_#{timestamp}.md"
+        
+        # Create markdown content with two sections
+        markdown_content = <<~MARKDOWN
+          # LLM Team Session - #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}
+
+          ## User Input
+
+          #{@last_user_input}
+
+          ## Response
+
+          #{@last_response}
+        MARKDOWN
+        
+        begin
+          File.write(filename, markdown_content)
+          LlmTeam::Output.puts("Response saved to: #{filename}", type: :status)
+        rescue => e
+          LlmTeam::Output.puts("Failed to save file: #{e.message}", type: :error)
+        end
+      end
 
       def parse_arguments
         args = ARGV.dup
