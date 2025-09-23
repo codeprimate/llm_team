@@ -52,11 +52,15 @@ module LlmTeam
         LlmTeam::Output.puts("  'help' - Show this help message", type: :app)
         LlmTeam::Output.puts("  'clear' - Clear the screen and conversation history", type: :app)
         LlmTeam::Output.puts("  'save' - Save the last query and response to a timestamped markdown file", type: :app)
+        LlmTeam::Output.puts("", type: :app)
+        LlmTeam::Output.puts("Multiline Input:", type: :app, color: :yellow)
+        LlmTeam::Output.puts("  End a line with '\\' to continue on next line", type: :app)
+        LlmTeam::Output.puts("  Type a single dot (.) on a new line to finish multiline input", type: :app)
+        LlmTeam::Output.puts("  Or press Ctrl+D to finish multiline input", type: :app)
         LlmTeam::Output.puts("\n" + "=" * 50, type: :app)
 
         loop do
-          LlmTeam::Output.user_prompt("You: ")
-          user_input = $stdin.gets&.chomp&.strip
+          user_input = get_multiline_input
 
           # Handle EOF (Ctrl+D) or nil input
           if user_input.nil?
@@ -87,6 +91,11 @@ module LlmTeam
             LlmTeam::Output.puts("  'clear' - Clear the screen and conversation history", type: :user)
             LlmTeam::Output.puts("  'save' - Save the last query and response to a timestamped markdown file", type: :user)
             LlmTeam::Output.puts("  Any other text - Send as a query to the LLM team", type: :user)
+            LlmTeam::Output.puts("", type: :user)
+            LlmTeam::Output.puts("Multiline Input:", type: :user, color: [:yellow, :bold])
+            LlmTeam::Output.puts("  End a line with '\\' to continue on next line", type: :user)
+            LlmTeam::Output.puts("  Type a single dot (.) on a new line to finish multiline input", type: :user)
+            LlmTeam::Output.puts("  Or press Ctrl+D to finish multiline input", type: :user)
             next
           end
 
@@ -160,6 +169,62 @@ module LlmTeam
       end
 
       private
+
+      # Handles multiline input with clear instructions for users
+      # Supports both single-line and multiline input
+      # Users can finish multiline input by pressing Ctrl+D or by typing just a dot (.) on a new line
+      def get_multiline_input
+        LlmTeam::Output.user_prompt("You: ")
+        
+        # Try to read the first line
+        first_line = $stdin.gets
+        
+        # Handle EOF (Ctrl+D) on first attempt
+        return nil if first_line.nil?
+        
+        first_line = first_line.chomp
+        
+        # If it's just a single line and doesn't end with a backslash, return it
+        # Also handle common single-line commands
+        if !first_line.end_with?("\\") && !first_line.strip.empty?
+          # Check if this looks like a command or short input
+          stripped = first_line.strip
+          if ["exit", "quit", "q", "help", "clear", "save"].include?(stripped.downcase) || 
+             !stripped.include?("\n")
+            return stripped
+          end
+        end
+        
+        # If we get here, we're in multiline mode
+        LlmTeam::Output.puts("(Multiline input detected. Type a single dot (.) on a new line to finish, or press Ctrl+D)", type: :app, color: :yellow)
+        
+        lines = []
+        
+        # Add the first line (remove trailing backslash if present)
+        lines << (first_line.end_with?("\\") ? first_line[0..-2] : first_line)
+        
+        # Continue reading lines
+        loop do
+          line = $stdin.gets
+          
+          # Handle EOF (Ctrl+D)
+          break if line.nil?
+          
+          line = line.chomp
+          
+          # Check for end marker (single dot)
+          if line.strip == "."
+            break
+          end
+          
+          # Remove trailing backslash if present (line continuation)
+          lines << (line.end_with?("\\") ? line[0..-2] : line)
+        end
+        
+        # Join all lines and clean up
+        result = lines.join("\n").strip
+        result.empty? ? nil : result
+      end
 
       def save_last_answer
         if @last_response.nil?
@@ -287,6 +352,12 @@ module LlmTeam
             exit, quit, q           Exit the application
             help                    Show help
             clear                   Clear screen and conversation history
+            save                    Save the last query and response to a file
+
+          Multiline Input:
+            End a line with '\'     Continue input on next line
+            Type '.' on new line    Finish multiline input
+            Press Ctrl+D            Finish multiline input
         HELP
       end
 
