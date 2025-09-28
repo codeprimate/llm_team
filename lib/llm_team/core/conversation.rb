@@ -69,7 +69,7 @@ module LlmTeam
         end
 
         # Always inject current timestamp before user message
-        messages << {role: LlmTeam::ROLE_ASSISTANT, content: "The current date and time is #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}"}
+        messages << {role: LlmTeam::ROLE_ASSISTANT, content: "--- The current date and time is #{Time.now.strftime("%Y-%m-%d %H:%M:%S")} ---\n\n"}
         messages << {role: LlmTeam::ROLE_USER, content: new_user_message}
         messages
       end

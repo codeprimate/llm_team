@@ -5,7 +5,7 @@ require_relative "../agents/core/primary_agent"
 module LlmTeam
   module CLI
     # Interactive CLI application with command handling and error recovery
-    # 
+    #
     # Non-obvious behaviors:
     # - Resets statistics before each interaction for accurate per-query tracking
     # - Handles cross-platform screen clearing (clear/cls)
@@ -20,11 +20,12 @@ module LlmTeam
 
       def run
         parse_arguments
-        
+
         # Set global configuration from CLI options
         LlmTeam.configuration.verbose = @options[:verbose] if @options[:verbose]
         LlmTeam.configuration.quiet = @options[:quiet] if @options[:quiet]
-        
+        LlmTeam.configuration.searxng_url = @options[:searxng_url] if @options[:searxng_url]
+
         primary_agent = LlmTeam::Agents::Core::PrimaryAgent.new(
           max_iterations: @options[:max_iterations] || 20,
           model: @options[:model]
@@ -41,12 +42,12 @@ module LlmTeam
         LlmTeam::Output.puts("LLM Team Interactive Mode", type: :app)
         LlmTeam::Output.puts("=" * 50, type: :app)
         LlmTeam::Output.puts("Type your questions or requests, and the team will work together to help you.", type: :app)
-        
+
         if @options[:verbose]
           LlmTeam::Output.puts("Configuration:", type: :debug)
           LlmTeam::Output.puts("  Model: #{@options[:model] || LlmTeam::Configuration::DEFAULT_MODEL}", type: :debug)
         end
-        
+
         LlmTeam::Output.puts("Commands:", type: :app, color: :yellow)
         LlmTeam::Output.puts("  'exit', 'quit', or 'q' - Exit the interactive mode", type: :app)
         LlmTeam::Output.puts("  'help' - Show this help message", type: :app)
@@ -138,10 +139,10 @@ module LlmTeam
         query = @options[:query]
         LlmTeam::Output.puts("LLM Team - Single Query Mode", type: :app)
         LlmTeam::Output.puts("Query: #{query}", type: :app, color: :green)
-        
+
         if @options[:verbose]
           LlmTeam::Output.puts("Configuration:", type: :debug)
-          LlmTeam::Output.puts("  Model: #{@options[:model] || 'deepseek/deepseek-chat-v3.1 (default)'}", type: :debug)
+          LlmTeam::Output.puts("  Model: #{@options[:model] || "deepseek/deepseek-chat-v3.1 (default)"}", type: :debug)
           LlmTeam::Output.puts("  Max Iterations: #{@options[:max_iterations]}", type: :debug)
           LlmTeam::Output.puts("  History Behavior: #{@options[:history_behavior]}", type: :debug)
         end
@@ -175,52 +176,52 @@ module LlmTeam
       # Users can finish multiline input by pressing Ctrl+D or by typing just a dot (.) on a new line
       def get_multiline_input
         LlmTeam::Output.user_prompt("You: ")
-        
+
         # Try to read the first line
         first_line = $stdin.gets
-        
+
         # Handle EOF (Ctrl+D) on first attempt
         return nil if first_line.nil?
-        
+
         first_line = first_line.chomp
-        
+
         # If it's just a single line and doesn't end with a backslash, return it
         # Also handle common single-line commands
         if !first_line.end_with?("\\") && !first_line.strip.empty?
           # Check if this looks like a command or short input
           stripped = first_line.strip
-          if ["exit", "quit", "q", "help", "clear", "save"].include?(stripped.downcase) || 
-             !stripped.include?("\n")
+          if ["exit", "quit", "q", "help", "clear", "save"].include?(stripped.downcase) ||
+              !stripped.include?("\n")
             return stripped
           end
         end
-        
+
         # If we get here, we're in multiline mode
         LlmTeam::Output.puts("(Multiline input detected. Type a single dot (.) on a new line to finish, or press Ctrl+D)", type: :app, color: :yellow)
-        
+
         lines = []
-        
+
         # Add the first line (remove trailing backslash if present)
         lines << (first_line.end_with?("\\") ? first_line[0..-2] : first_line)
-        
+
         # Continue reading lines
         loop do
           line = $stdin.gets
-          
+
           # Handle EOF (Ctrl+D)
           break if line.nil?
-          
+
           line = line.chomp
-          
+
           # Check for end marker (single dot)
           if line.strip == "."
             break
           end
-          
+
           # Remove trailing backslash if present (line continuation)
           lines << (line.end_with?("\\") ? line[0..-2] : line)
         end
-        
+
         # Join all lines and clean up
         result = lines.join("\n").strip
         result.empty? ? nil : result
@@ -235,7 +236,7 @@ module LlmTeam
         # Generate timestamp filename in format: llm_team_YYYYMMDD_HHMMSS.md
         timestamp = Time.now.strftime("%Y%m%d_%H%M%S")
         filename = "llm_team_#{timestamp}.md"
-        
+
         # Create markdown content with two sections
         markdown_content = <<~MARKDOWN
           # LLM Team Session - #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}
@@ -248,7 +249,7 @@ module LlmTeam
 
           #{@last_response}
         MARKDOWN
-        
+
         begin
           File.write(filename, markdown_content)
           LlmTeam::Output.puts("Response saved to: #{filename}", type: :status)
@@ -295,6 +296,13 @@ module LlmTeam
           when "--quiet"
             @options[:quiet] = true
             @options[:verbose] = false  # quiet overrides verbose
+          when "--searxng-mcp"
+            searxng_url = args.shift
+            if searxng_url.nil?
+              LlmTeam::Output.puts("--searxng-mcp requires a URL", type: :error)
+              exit 1
+            end
+            @options[:searxng_url] = searxng_url
           when "--query", "-q"
             # Non-interactive mode with single query
             query = args.shift
@@ -333,6 +341,7 @@ module LlmTeam
             -v, --version           Show version information
             -m, --model MODEL       Set LLM model (default: #{LlmTeam::Configuration::DEFAULT_MODEL})
             --agents-path PATH      Add additional path for auxiliary agents
+            --searxng-mcp URL       Set SearXNG MCP server URL (default: http://localhost:7778)
             --verbose               Enable verbose output
             --quiet                 Enable quiet output (minimal output)
             -q, --query QUERY       Run in non-interactive mode with single query
@@ -343,10 +352,12 @@ module LlmTeam
             llm_team -q "Explain quantum computing"     # Single query mode
             llm_team --model "gpt-4" --verbose         # Custom model with verbose output
             llm_team --agents-path ./my_agents         # Load auxiliary agents from additional directory
+            llm_team --searxng-mcp http://localhost:8080 # Use custom SearXNG MCP server
 
           Environment Variables:
             OPENROUTER_API_KEY               Your OpenRouter API key (required)
             LLM_TEAM_AUXILIARY_AGENTS_PATH   Default path for auxiliary agents
+            LLM_TEAM_SEARXNG_URL             SearXNG MCP server URL (default: http://localhost:7778)
 
           Interactive Commands:
             exit, quit, q           Exit the application
@@ -355,7 +366,7 @@ module LlmTeam
             save                    Save the last query and response to a file
 
           Multiline Input:
-            End a line with '\'     Continue input on next line
+            End a line with ''     Continue input on next line
             Type '.' on new line    Finish multiline input
             Press Ctrl+D            Finish multiline input
         HELP

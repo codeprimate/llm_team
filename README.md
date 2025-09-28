@@ -61,7 +61,7 @@ LLM Team uses a namespace-based auxiliary agent system that automatically loads 
 ```
 auxiliary/
 ├── primary_agent/
-│   ├── web_search_agent.rb     → LlmTeam::Agents::Auxiliary::PrimaryAgent::WebSearchAgent
+│   ├── searxng_mcp_agent.rb     → LlmTeam::Agents::Auxiliary::ResearchAgent::SearxngMcpAgent
 │   └── calculator_agent.rb     → LlmTeam::Agents::Auxiliary::PrimaryAgent::CalculatorAgent
 └── research_agent/
     └── database_agent.rb       → LlmTeam::Agents::Auxiliary::ResearchAgent::DatabaseAgent
@@ -79,11 +79,11 @@ touch lib/llm_team/agents/auxiliary/primary_agent/web_search_agent.rb
 
 2. **Implement the agent** following this pattern:
 ```ruby
-# lib/llm_team/agents/auxiliary/primary_agent/web_search_agent.rb
-module LlmTeam::Agents::Auxiliary::PrimaryAgent
-  class WebSearchAgent < LlmTeam::Core::Agent
+# lib/llm_team/agents/auxiliary/research_agent/searxng_mcp_agent.rb
+module LlmTeam::Agents::Auxiliary::ResearchAgent
+  class SearxngMcpAgent < LlmTeam::Core::Agent
     def initialize
-      super("WebSearchAgent")
+      super("SearxngMcpAgent")
     end
 
     def search_web(query:)

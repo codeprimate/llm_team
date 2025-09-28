@@ -22,6 +22,9 @@ module LlmTeam
     # Output Configuration
     attr_accessor :verbose, :quiet
 
+    # SearXNG MCP Configuration
+    attr_accessor :searxng_url
+
     DEFAULT_MODEL = "google/gemini-2.5-flash"
     DEFAULT_MAX_ITERATIONS = 5
     DEFAULT_TEMPERATURE = 0.7
@@ -32,6 +35,7 @@ module LlmTeam
     DEFAULT_TIMEOUT = 30
     DEFAULT_LOG_LEVEL = :info
     DEFAULT_API_BASE_URL = "https://openrouter.ai/api/v1"
+    DEFAULT_SEARXNG_URL = "http://localhost:7778"
     DEFAULT_VERBOSE = false
     DEFAULT_QUIET = false
 
@@ -60,6 +64,9 @@ module LlmTeam
       # Output Configuration
       @verbose = ENV.fetch("LLM_TEAM_VERBOSE", DEFAULT_VERBOSE.to_s).downcase == "true"
       @quiet = ENV.fetch("LLM_TEAM_QUIET", DEFAULT_QUIET.to_s).downcase == "true"
+
+      # SearXNG MCP Configuration
+      @searxng_url = ENV.fetch("LLM_TEAM_SEARXNG_URL", DEFAULT_SEARXNG_URL)
 
       # Handle mutual exclusion: quiet overrides verbose
       @verbose = false if @quiet
@@ -105,13 +112,15 @@ module LlmTeam
         timeout: @timeout,
         log_level: @log_level,
         verbose: @verbose,
-        quiet: @quiet
+        quiet: @quiet,
+        searxng_url: @searxng_url
       }
     end
 
     def reset!
       initialize
     end
+
     # Add an additional auxiliary agents path
     def add_auxiliary_agents_path(path)
       @auxiliary_agents_paths ||= []
