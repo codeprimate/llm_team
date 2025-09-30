@@ -36,6 +36,7 @@ module LlmTeam
         @llm_calls_count = 0
         @total_tool_calls = 0
         @current_iteration = nil
+        @max_tool_call_response_length = LlmTeam.configuration.max_tool_call_response_length
 
         # Always auto-load auxiliary agents
         load_auxiliary_agents
@@ -357,6 +358,10 @@ module LlmTeam
           if tool_agent
             # Execute tool and capture output
             tool_output = execute_tool(tool_agent, function_name, arguments)
+            if tool_output.length > @max_tool_call_response_length
+              LlmTeam::Output.puts("Tool output too long, truncating to #{@max_tool_call_response_length} characters", type: :warning)
+              tool_output = tool_output[0, @max_tool_call_response_length] + "\n---\n[TOOL OUTPUT TRUNCATED]\n---\n"
+            end
 
             # Add tool result to conversation with proper ID linking
             @conversation.add_message(

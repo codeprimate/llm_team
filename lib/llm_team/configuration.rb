@@ -11,7 +11,7 @@ module LlmTeam
     attr_accessor :temperature
 
     # Agent Configuration
-    attr_accessor :default_history_behavior, :auxiliary_agents_paths
+    attr_accessor :default_history_behavior, :auxiliary_agents_paths, :max_tool_call_response_length
 
     # Performance Configuration
     attr_accessor :max_retries, :retry_delay, :timeout
@@ -38,6 +38,7 @@ module LlmTeam
     DEFAULT_SEARXNG_URL = "http://localhost:7778"
     DEFAULT_VERBOSE = false
     DEFAULT_QUIET = false
+    DEFAULT_MAX_TOOL_CALL_RESPONSE_LENGTH = 128000
 
     def initialize
       # API Configuration
@@ -52,6 +53,7 @@ module LlmTeam
       # Agent Configuration
       @default_history_behavior = ENV.fetch("LLM_TEAM_HISTORY_BEHAVIOR", DEFAULT_HISTORY_BEHAVIOR.to_s).to_sym
       @auxiliary_agents_paths = [ENV.fetch("LLM_TEAM_AUXILIARY_AGENTS_PATH", DEFAULT_AUXILIARY_AGENTS_PATH)]
+      @max_tool_call_response_length = ENV.fetch("LLM_TEAM_MAX_TOOL_CALL_RESPONSE_LENGTH", DEFAULT_MAX_TOOL_CALL_RESPONSE_LENGTH).to_i
 
       # Performance Configuration
       @max_retries = ENV.fetch("LLM_TEAM_MAX_RETRIES", DEFAULT_MAX_RETRIES.to_s).to_i
