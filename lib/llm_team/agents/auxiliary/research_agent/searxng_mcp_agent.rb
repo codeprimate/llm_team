@@ -64,7 +64,7 @@ module LlmTeam
             else
               "Error: Unknown operation '#{operation}'. Supported: search, fetch, crawl"
             end
-          rescue => e
+                      rescue => e
             "Error: #{e.message}"
           end
 
@@ -149,6 +149,7 @@ module LlmTeam
             end
           rescue
             # Silently handle health check failures to avoid dependency issues
+            LlmTeam::Output.puts("Failed to check SearXNG MCP server health: #{e.message}", type: :error)
             false
           end
 

@@ -6,7 +6,7 @@ module LlmTeam
   module Agents
     module Core
       # Critic agent implementing structured quality review with iteration control
-      # 
+      #
       # Non-obvious behaviors:
       # - Uses low temperature (0.3) for consistent, deterministic feedback
       # - Provides structured output with severity classifications (TRIVIAL/MINOR/MAJOR)
@@ -126,7 +126,10 @@ module LlmTeam
         end
 
         # Content critique with structured feedback and iteration guidance
-        def critique_content(content:, original_request:, criteria: nil)
+        def critique_content(content:, original_request: nil, criteria: nil)
+          # If original_request is not provided, try to extract it from conversation history
+          original_request ||= extract_original_request_from_history
+
           criteria_text = criteria ? "Focus on: #{criteria}" : "Provide general constructive feedback"
           process_with_tools("#{criteria_text}\n\nOriginal User Request:\n#{original_request}\n\nContent to critique:\n#{content}")
         end
@@ -154,10 +157,19 @@ module LlmTeam
                     description: "Optional specific criteria or focus areas for the critique."
                   }
                 },
-                required: ["content", "original_request"]
+                required: ["content"]
               }
             }
           }
+        end
+
+        private
+
+        # Extract the original user request from conversation history
+        def extract_original_request_from_history
+          # Look for the first user message in the conversation history
+          user_message = @conversation.conversation_history.find { |msg| msg[:role] == LlmTeam::ROLE_USER }
+          user_message&.dig(:content) || "Original request not available"
         end
       end
     end

@@ -10,7 +10,7 @@ module LlmTeam
     # - Tool discovery uses class-level schema introspection rather than method reflection
     # - Retry logic handles both API failures and tool-not-found scenarios differently
     class Agent
-      attr_reader :name, :llm_client, :available_tools, :conversation, :max_iterations, :current_iteration
+      attr_reader :name, :llm_client, :available_tools, :conversation, :max_iterations, :current_iteration, :total_tool_calls
 
       # Default model parameters - can be overridden by subclasses
       DEFAULT_TEMPERATURE = 0.7
@@ -34,6 +34,7 @@ module LlmTeam
         @conversation = Conversation.new(history_behavior: history_behavior)
         @total_latency_ms = 0
         @llm_calls_count = 0
+        @total_tool_calls = 0
         @current_iteration = nil
 
         # Always auto-load auxiliary agents
@@ -45,9 +46,9 @@ module LlmTeam
         base_prompt = self.class.const_defined?(:SYSTEM_PROMPT) ? self.class::SYSTEM_PROMPT : nil
         return base_prompt unless @current_iteration
 
-        # Prepend iteration header when current_iteration is set
-        iteration_header = "--- [#{agent_namespace}] Iteration #{@current_iteration.to_s.rjust(2, "0")}/#{@max_iterations.to_s.rjust(2, "0")} ---\n\n"
-        iteration_header + (base_prompt || "")
+        # Prepend combined header when current_iteration is set
+        header = "--- [#{agent_namespace}] Iteration #{@current_iteration.to_s.rjust(2, "0")}/#{@max_iterations.to_s.rjust(2, "0")} | Tool Calls: #{@total_tool_calls} ---\n\n"
+        header + (base_prompt || "")
       end
 
       # Dynamic tool prompt resolution - subclasses can define TOOL_PROMPT constant
@@ -136,6 +137,9 @@ module LlmTeam
       def process_with_tools(initial_message, temperature: nil, history_behavior: nil)
         history_behavior ||= @conversation.history_behavior
 
+        # Reset tool calls counter for this processing session
+        @total_tool_calls = 0
+
         # Use agent's default temperature if not provided
         temperature ||= model_parameters[:temperature]
 
@@ -167,9 +171,6 @@ module LlmTeam
             call_args[:tools] = tool_schemas
             call_args[:tool_choice] = :auto
           end
-
-          # DEBUG
-          LlmTeam::Output.puts("System prompt: #{system_prompt}", type: :debug)
 
           # Call LLM with conditional tool arguments (with retry logic)
           response = call_llm_with_retry(@conversation.conversation_history, **call_args)
@@ -344,6 +345,9 @@ module LlmTeam
           arguments_json = tool_call.dig("function", "arguments")
           arguments = JSON.parse(arguments_json, symbolize_names: true)
 
+          # Increment tool calls counter
+          @total_tool_calls += 1
+
           LlmTeam::Output.puts("#{name} → #{function_name}", type: :tool)
           LlmTeam::Output.puts("Args: #{arguments}", type: :debug)
 
@@ -486,6 +490,7 @@ module LlmTeam
         @total_tokens_used = 0
         @total_latency_ms = 0
         @llm_calls_count = 0
+        @total_tool_calls = 0
       end
 
       # Latency formatting helper (ms to seconds)
