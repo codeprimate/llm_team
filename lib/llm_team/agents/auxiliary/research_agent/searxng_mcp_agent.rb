@@ -30,8 +30,10 @@ module LlmTeam
             Always provide concise responses in the format:
             Research: [operation description]
             Result: [research findings]
+            Sources: [list of URLs and source information for citation]
             
             Focus on factual, current information for academic and research purposes.
+            Always include source URLs and publication information for proper citation.
           PROMPT
 
           TOOL_PROMPT = <<~PROMPT
@@ -162,7 +164,8 @@ module LlmTeam
 
             begin
               result = call_mcp_tool("search", parameters)
-              "Research: Web search for '#{query}'\nResult: #{result}"
+              sources = extract_sources_from_search_result(result)
+              "Research: Web search for '#{query}'\nResult: #{result}\nSources: #{sources}"
             rescue MCPFailureError
               "TOOL_UNAVAILABLE: Web search service is down. Ignore this tool's output and do not use it."
             end
@@ -177,7 +180,7 @@ module LlmTeam
 
             begin
               result = call_mcp_tool("fetch", parameters)
-              "Research: Fetch content from #{url}\nResult: #{result}"
+              "Research: Fetch content from #{url}\nResult: #{result}\nSources: [Web] Content from #{url}"
             rescue MCPFailureError
               "TOOL_UNAVAILABLE: Web content fetching service is down. Ignore this tool's output and do not use it."
             end
@@ -193,10 +196,39 @@ module LlmTeam
 
             begin
               result = call_mcp_tool("crawl", parameters)
-              "Research: Crawl #{url} (limit: #{subpage_limit})\nResult: #{result}"
+              sources = extract_sources_from_crawl_result(result, url)
+              "Research: Crawl #{url} (limit: #{subpage_limit})\nResult: #{result}\nSources: #{sources}"
             rescue MCPFailureError
               "TOOL_UNAVAILABLE: Web crawling service is down. Ignore this tool's output and do not use it."
             end
+          end
+
+          # Extract source information from search results
+          def extract_sources_from_search_result(result)
+            return "No sources available" unless result.is_a?(Hash) && result["results"]
+
+            sources = result["results"].map do |item|
+              title = item["title"] || "Untitled"
+              url = item["url"] || ""
+              "[Web] \"#{title}\" - #{url}"
+            end
+
+            sources.empty? ? "No sources available" : sources.join("; ")
+          end
+
+          # Extract source information from crawl results
+          def extract_sources_from_crawl_result(result, base_url)
+            sources = ["[Web] Crawled content from #{base_url}"]
+
+            if result.is_a?(Hash) && result["subpages"]
+              result["subpages"].each do |subpage|
+                url = subpage["url"] || ""
+                title = subpage["title"] || "Subpage"
+                sources << "[Web] \"#{title}\" - #{url}"
+              end
+            end
+
+            sources.join("; ")
           end
 
           # HTTP client for MCP server communication

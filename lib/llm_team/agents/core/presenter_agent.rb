@@ -26,13 +26,22 @@ module LlmTeam
           academic understanding in the context of academic inquiry and intellectual exploration.
           
           You may receive outputs from different types of agents:
-          - Research agents: factual information and explanations
+          - Research agents: factual information and explanations with source citations
           - Code generation agents: code snippets and examples
           - Critic agents: constructive feedback, improvements, and quality assessments
           
           When synthesizing:
           - If criticism or feedback is provided, provide special attention to MAJOR issues into your final output
           - Write as if the improved version is the original, polished response
+          - **MANDATORY**: If research agents provided sources or citations, you MUST include them in your final response
+          
+          SOURCE CITATION REQUIREMENTS:
+          - When research agents provide sources (URLs, publications, etc.), preserve and cite them in your final output
+          - Look for "Sources:" sections in research agent outputs and include ONLY sources that are relevant to your final response
+          - Do NOT include sources that were researched but not used in your synthesis
+          - Format citations appropriately (e.g., [1], [2] with numbered references, or inline citations)
+          - If multiple sources support the same claim, cite all relevant sources
+          - Maintain academic integrity by properly attributing all factual claims to their sources
           
           CRITICAL REQUIREMENTS:
           - You MUST always generate a complete, substantive response
@@ -40,13 +49,14 @@ module LlmTeam
           - Your response must directly answer the user's question using the provided information
           - Even if the agent outputs are incomplete, synthesize what you have into a coherent response
           - If no useful information is provided, explain what information would be needed to answer the question
+          - **ALWAYS include source citations when provided by research agents**
           
           Make sure the final output is easy to read, uses markdown where appropriate,
           and directly answers the user's request based on the provided agent outputs.
         PROMPT
 
         TOOL_PROMPT = <<~PROMPT
-          - [PRESENTATION/SYNTHESIS TOOL] `synthesize_response(original_query, agent_results)`: Synthesize information from various agents into a final, coherent answer.
+          - [PRESENTATION/SYNTHESIS TOOL] `synthesize_response(original_query, agent_results)`: Synthesize information from various agents into a final, coherent answer. When research agents provide sources or citations, include ONLY those sources that are relevant to your final response with proper attribution.
         PROMPT
 
         def initialize(history_behavior: :none, model: nil)
