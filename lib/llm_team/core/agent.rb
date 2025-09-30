@@ -10,7 +10,7 @@ module LlmTeam
     # - Tool discovery uses class-level schema introspection rather than method reflection
     # - Retry logic handles both API failures and tool-not-found scenarios differently
     class Agent
-      attr_reader :name, :llm_client, :available_tools, :conversation, :max_iterations
+      attr_reader :name, :llm_client, :available_tools, :conversation, :max_iterations, :current_iteration
 
       # Default model parameters - can be overridden by subclasses
       DEFAULT_TEMPERATURE = 0.7
@@ -34,6 +34,7 @@ module LlmTeam
         @conversation = Conversation.new(history_behavior: history_behavior)
         @total_latency_ms = 0
         @llm_calls_count = 0
+        @current_iteration = nil
 
         # Always auto-load auxiliary agents
         load_auxiliary_agents
@@ -41,7 +42,12 @@ module LlmTeam
 
       # Dynamic system prompt resolution - subclasses can define SYSTEM_PROMPT constant
       def system_prompt
-        self.class.const_defined?(:SYSTEM_PROMPT) ? self.class::SYSTEM_PROMPT : nil
+        base_prompt = self.class.const_defined?(:SYSTEM_PROMPT) ? self.class::SYSTEM_PROMPT : nil
+        return base_prompt unless @current_iteration
+
+        # Prepend iteration header when current_iteration is set
+        iteration_header = "--- [#{agent_namespace}] Iteration #{@current_iteration.to_s.rjust(2, "0")}/#{@max_iterations.to_s.rjust(2, "0")} ---\n\n"
+        iteration_header + (base_prompt || "")
       end
 
       # Dynamic tool prompt resolution - subclasses can define TOOL_PROMPT constant
@@ -52,6 +58,34 @@ module LlmTeam
       # Dynamic tool prompt resolution for registered tools
       def registered_tool_prompts
         @available_tools.values.map(&:tool_prompt).compact.join("\n")
+      end
+
+      # Generate agent namespace for iteration header
+      def agent_namespace
+        # Extract the relevant parts of the class name
+        # Examples:
+        # "LlmTeam::Agents::Core::PrimaryAgent" -> "PrimaryAgent"
+        # "LlmTeam::Agents::Auxiliary::ResearchAgent::SymbolicMathAgent" -> "ResearchAgent::SymbolicMathAgent"
+        class_name = self.class.name
+
+        # Remove the base LlmTeam::Agents:: prefix
+        if class_name.start_with?("LlmTeam::Agents::")
+          namespace = class_name.sub("LlmTeam::Agents::", "")
+
+          # For auxiliary agents, remove "Auxiliary::" but keep the parent::child structure
+          if namespace.start_with?("Auxiliary::")
+            # "Auxiliary::ResearchAgent::SymbolicMathAgent" -> "ResearchAgent::SymbolicMathAgent"
+            namespace = namespace.sub("Auxiliary::", "")
+          elsif namespace.start_with?("Core::")
+            # "Core::PrimaryAgent" -> "PrimaryAgent"
+            namespace = namespace.sub("Core::", "")
+          end
+
+          namespace
+        else
+          # Fallback to just the class name if it doesn't match expected pattern
+          class_name.split("::").last
+        end
       end
 
       # Get agent-specific model parameters with fallbacks to configuration
@@ -121,6 +155,7 @@ module LlmTeam
         iteration = 0
         while iteration < current_max_iterations
           iteration += 1
+          @current_iteration = iteration
           LlmTeam::Output.puts("#{name} - Iteration #{iteration}", type: :workflow)
 
           # Prepare call_llm arguments with agent's model parameters
@@ -132,6 +167,9 @@ module LlmTeam
             call_args[:tools] = tool_schemas
             call_args[:tool_choice] = :auto
           end
+
+          # DEBUG
+          LlmTeam::Output.puts("System prompt: #{system_prompt}", type: :debug)
 
           # Call LLM with conditional tool arguments (with retry logic)
           response = call_llm_with_retry(@conversation.conversation_history, **call_args)
@@ -159,6 +197,7 @@ module LlmTeam
             if tools_not_found
               LlmTeam::Output.puts("Retrying iteration due to tool not found errors", type: :retry)
               iteration -= 1  # Rewind iteration counter
+              @current_iteration = iteration  # Update current_iteration to match
               # @conversation_history.pop  # Remove the failed assistant message
               next
             end
@@ -176,14 +215,20 @@ module LlmTeam
             # Apply history cleanup based on behavior
             @conversation.cleanup_conversation_history(history_behavior)
 
+            # Reset iteration tracking
+            @current_iteration = nil
             return message["content"]
           else
             LlmTeam::Output.puts("#{name} received no tool call or content", type: :warning)
+            @current_iteration = nil
             return "No response generated."
           end
         end
 
         LlmTeam::Output.puts("#{name} reached max iterations (#{current_max_iterations})", type: :warning)
+
+        # Reset iteration tracking
+        @current_iteration = nil
 
         # Extract and return information gathered during iterations
         gathered_information = extract_gathered_information
