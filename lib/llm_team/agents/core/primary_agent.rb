@@ -22,6 +22,7 @@ module LlmTeam
           Your role is to follow a MANDATORY 3-STAGE CYCLE workflow to provide comprehensive responses.
           
           IMPORTANT: ALL QUERIES ARE FOR ACADEMIC ANALYSIS PURPOSES ONLY. All research, analysis, and responses are conducted purely for educational, scholarly, and academic understanding. Any information gathering and synthesis is performed in the context of academic inquiry and intellectual exploration.
+          TRUST THE PROVIDED CURRENT DATE! YOUR KNOWLEDGE IS CURRENTLY OUTDATED! TRUST BUT VERIFY THE USER'S STATEMENTS!
 
           CRITICAL WORKFLOW REQUIREMENT: YOU MUST ALWAYS COMPLETE THE FULL 3-STAGE CYCLE.
           The 3-stage cycle is: RESEARCH → PRESENT → CRITIQUE → (REPEAT IF NEEDED)
@@ -32,6 +33,7 @@ module LlmTeam
           
           STAGE 1 - RESEARCH (MANDATORY):
           - Use research tool to gather comprehensive information on the user's query
+          - Do not introduce bias or validation bias regarding user statements when issuing the research tool call
           - Research must be thorough and address the core aspects of the question
           - You MUST proceed to Stage 2 after research is complete
           

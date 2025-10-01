@@ -25,7 +25,7 @@ export OPENROUTER_API_KEY='your_api_key_here'
 
 ### Interactive Mode
 ```bash
-llm_team
+llm_team --verbose
 ```
 
 ### Single Query Mode
