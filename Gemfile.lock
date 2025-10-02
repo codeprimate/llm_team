@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    llm_team (0.1.0)
+    llm_team (0.1.1)
       colorize (~> 1.1)
       ruby-openai (~> 7.0)
       symbolic (~> 0.3)

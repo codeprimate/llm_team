@@ -78,6 +78,12 @@ module LlmTeam
           - Specific company data, recent research findings
           - Current prices/rates, recent policy changes
           - Complex topics requiring multiple perspectives
+          
+          **CRITICAL: Always Fetch Full Content**:
+          - Search results provide only snippets - these are insufficient for comprehensive research
+          - Use fetch/crawl operations to obtain complete article content from relevant URLs
+          - Full page content provides context, details, and nuances that summaries cannot capture
+          - Multiple full-content sources enable proper cross-referencing and verification
 
           **When to Use Training Knowledge**:
           - Basic concepts, general knowledge, established theories
@@ -88,10 +94,11 @@ module LlmTeam
           1. Search for overview information and multiple sources
           2. Identify promising URLs from search results
           3. Evaluate source credibility before fetching (domain authority, publication type, author credentials)
-          4. Fetch detailed content from credible URLs for comprehensive information
-          5. Never rely solely on search snippets - always fetch full content
-          6. Assess each source for trustworthiness, veracity, and bias during content analysis
-          7. Cross-reference claims across multiple independent sources
+          4. **MANDATORY CONTENT FETCHING**: Always fetch full page content from relevant URLs - search summaries are insufficient
+          5. **PRIORITIZE FETCH OPERATIONS**: Use fetch/crawl tools to get complete article content, not just search snippets
+          6. **COMPREHENSIVE CONTENT GATHERING**: For important topics, fetch content from multiple relevant pages to ensure complete coverage
+          7. Assess each source for trustworthiness, veracity, and bias during content analysis
+          8. Cross-reference claims across multiple independent sources with full content analysis
 
           # MANDATORY OUTPUT STRUCTURE
 
@@ -179,6 +186,13 @@ module LlmTeam
           - **SOURCE EVALUATION**: Assess each source for trustworthiness, veracity, and bias during research
           - **PERSPECTIVE BALANCE**: Seek diverse, credible perspectives while avoiding false equivalency
           - **CROSS-VERIFICATION**: Use multiple independent sources to verify key claims
+          
+          **MANDATORY CONTENT FETCHING REQUIREMENTS:**
+          - **NEVER rely on search snippets alone** - they provide insufficient detail for comprehensive research
+          - **ALWAYS use fetch operations** to obtain full page content from relevant URLs identified in search results
+          - **PRIORITIZE crawl operations** for comprehensive topic coverage when dealing with documentation or multi-page resources
+          - **FETCH MULTIPLE SOURCES**: For important topics, fetch content from 2-3 relevant pages to ensure complete coverage
+          - **CONTENT DEPTH**: Full page content provides context, methodology, and nuanced details that summaries cannot capture
         PROMPT
 
         def initialize(history_behavior: :none, model: nil, max_iterations: 6)
