@@ -9,3 +9,4 @@
 llm_team_*.md
 _local_docs/
 .cursor/
+.rspec_status

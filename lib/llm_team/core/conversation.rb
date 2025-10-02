@@ -3,7 +3,7 @@
 module LlmTeam
   module Core
     # Conversation management with dual history tracking and behavior modes
-    # 
+    #
     # Key behaviors:
     # - Maintains separate conversation_history (per-call) and persistent_history (cross-calls)
     # - History behavior modes control what persists between calls: :none, :last, :full
@@ -19,7 +19,7 @@ module LlmTeam
       end
 
       # Conversation context builder with history behavior modes
-      # 
+      #
       # Non-obvious behaviors:
       # - :last mode finds last user+assistant pair, not just last message
       # - Filters out datetime injection messages and system prompts from history
@@ -75,7 +75,7 @@ module LlmTeam
       end
 
       # Post-processing history cleanup based on behavior mode
-      # 
+      #
       # Non-obvious behaviors:
       # - :none mode clears all persistent history (fresh start each call)
       # - :last mode extracts and preserves only the final user-assistant pair
@@ -113,16 +113,16 @@ module LlmTeam
 
       # Add message to conversation history
       def add_message(role, content, tool_calls: nil, tool_call_id: nil, name: nil)
-        message = { role: role, content: content }
+        message = {role: role, content: content}
         message[:tool_calls] = tool_calls if tool_calls
         message[:tool_call_id] = tool_call_id if tool_call_id
         message[:name] = name if name
-        
+
         @conversation_history << message
       end
 
       # Extract tool execution results from conversation history
-      # 
+      #
       # Non-obvious behavior:
       # - Maps tool names to their output content for result aggregation
       # - Used by primary agent to collect results from multiple tool calls

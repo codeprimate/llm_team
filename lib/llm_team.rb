@@ -40,7 +40,6 @@ module LlmTeam
   ROLE_USER = :user
   ROLE_ASSISTANT = :assistant
   ROLE_TOOL = :tool
-
 end
 
 # LLM Team Primary Agent - Setup and Usage

@@ -6,45 +6,45 @@ module LlmTeam
   module Output
     OUTPUT_TYPES = {
       # Application Level
-      app:           { icon: "🤖", color: [:blue, :bold],   indent: 0, level: :normal },
-      user:          { icon: "💬", color: :cyan,            indent: 0, level: :normal },
-      result:        { icon: "🎯", color: [:green, :bold],  indent: 0, level: :normal },
-      
+      app: {icon: "🤖", color: [:blue, :bold], indent: 0, level: :normal},
+      user: {icon: "💬", color: :cyan, indent: 0, level: :normal},
+      result: {icon: "🎯", color: [:green, :bold], indent: 0, level: :normal},
+
       # Workflow Level
-      workflow:      { icon: "🔄", color: [:blue, :bold],   indent: 0, level: :normal },
-      tool:          { icon: "🔧", color: :magenta,         indent: 2, level: :normal },
-      status:        { icon: "✅", color: [:green, :bold],  indent: 2, level: :normal },
-      
+      workflow: {icon: "🔄", color: [:blue, :bold], indent: 0, level: :normal},
+      tool: {icon: "🔧", color: :magenta, indent: 2, level: :normal},
+      status: {icon: "✅", color: [:green, :bold], indent: 2, level: :normal},
+
       # Technical Level
-      technical:     { icon: "📡", color: :cyan,            indent: 2, level: :verbose },
-      performance:   { icon: "⏱️", color: :light_black,     indent: 2, level: :verbose },
-      data:          { icon: "📊", color: :light_black,     indent: 4, level: :verbose },
-      
+      technical: {icon: "📡", color: :cyan, indent: 2, level: :verbose},
+      performance: {icon: "⏱️", color: :light_black, indent: 2, level: :verbose},
+      data: {icon: "📊", color: :light_black, indent: 4, level: :verbose},
+
       # Error/Warning Level - context-sensitive
-      error:         { icon: "❌", color: [:red, :bold],    indent: 0, level: :critical },
-      warning:       { icon: "⚠️", color: :yellow,          indent: 0, level: :normal },
-      retry:         { icon: "🔄", color: :yellow,          indent: 2, level: :verbose },
-      
+      error: {icon: "❌", color: [:red, :bold], indent: 0, level: :critical},
+      warning: {icon: "⚠️", color: :yellow, indent: 0, level: :normal},
+      retry: {icon: "🔄", color: :yellow, indent: 2, level: :verbose},
+
       # Debug Level - verbose only, deepest indent
-      debug:         { icon: "🔍", color: :light_black,     indent: 6, level: :verbose }
+      debug: {icon: "🔍", color: :light_black, indent: 6, level: :verbose}
     }
-    
+
     def self.puts(message, type:, level: nil, color: nil, indent: nil)
       type_config = OUTPUT_TYPES[type]
       raise ArgumentError, "Unknown output type: #{type}" unless type_config
-      
+
       effective_level = level || type_config[:level]
       return unless should_display?(effective_level)
-      
+
       formatted_message = format_message(
-        message, 
-        type_config, 
-        color: color, 
+        message,
+        type_config,
+        color: color,
         indent: indent
       )
       Kernel.puts(formatted_message)
     end
-    
+
     # Specific method for final answers to handle quiet mode formatting
     def self.final_answer(content)
       config = LlmTeam.configuration
@@ -60,7 +60,7 @@ module LlmTeam
         Kernel.puts("=" * 50)
       end
     end
-    
+
     # Special method for user prompts that need to show even in quiet mode for interactive use
     def self.user_prompt(prompt)
       config = LlmTeam.configuration
@@ -74,31 +74,31 @@ module LlmTeam
         print formatted
       end
     end
-    
+
     private
-    
+
     def self.should_display?(level)
       config = LlmTeam.configuration
-      
+
       # In quiet mode, only show critical errors and user prompts
       return false if config.quiet && level != :critical && level != :user_prompt
-      
+
       # Always show critical and normal level messages
       return true if level == :critical || level == :normal
-      
+
       # Show verbose level messages only when verbose is enabled
       return config.verbose if level == :verbose
-      
+
       false
     end
-    
+
     def self.format_message(message, type_config, color: nil, indent: nil)
       effective_color = color || type_config[:color]
       effective_indent = indent || type_config[:indent]
       icon = type_config[:icon]
-      
+
       formatted = " " * effective_indent + icon + " " + message
-      
+
       # Handle both single colors and color arrays (e.g., [:blue, :bold])
       if effective_color.is_a?(Array)
         effective_color.reduce(formatted) { |str, color_method| str.send(color_method) }

@@ -64,7 +64,7 @@ module LlmTeam
             else
               "Error: Unknown operation '#{operation}'. Supported: search, fetch, crawl"
             end
-                      rescue => e
+          rescue => e
             "Error: #{e.message}"
           end
 
