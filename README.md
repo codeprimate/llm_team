@@ -30,18 +30,48 @@ llm_team --verbose
 
 ### Single Query Mode
 ```bash
+# Direct query string
 llm_team "What is machine learning?"
+
+# Query from file
+llm_team ./my_questions.txt
+llm_team -q ./questions.md
 ```
 
 ### Options
 ```bash
 llm_team [options] [query]
 
-  -m, --model MODEL       Set LLM model (default: google/gemini-2.5-pro)
+  -m, --model MODEL       Set LLM model (default: google/gemini-2.5-flash)
   --agents-path           Additional path for auxiliary agent definitions
+  --searxng-mcp URL       Set SearXNG MCP server URL
   --verbose               Enable verbose output
+  --quiet                 Enable quiet output (minimal output)
+  -q, --query QUERY       Run in non-interactive mode with single query (supports file paths)
   -h, --help              Show help message
 ```
+
+### Query Input Methods
+
+LLM Team supports multiple ways to provide your query:
+
+1. **Direct String**: Pass the query directly as a string
+   ```bash
+   llm_team "What is machine learning?"
+   llm_team -q "Explain quantum computing"
+   ```
+
+2. **File Path**: Provide a file path to read the query from
+   ```bash
+   llm_team ./my_questions.txt
+   llm_team -q ./questions.md
+   ```
+
+The system automatically detects if the input is a file path by checking for:
+- Path separators (`/` or `\`)
+- File extensions (e.g., `.txt`, `.md`, `.py`)
+
+If the file exists and is readable, its content will be used as the query. If not, the string will be treated as a direct query.
 
 ### Interactive Commands
 - `exit`, `quit`, `q` - Exit

@@ -171,6 +171,31 @@ module LlmTeam
 
       private
 
+      # Determines if a query string is a file path and reads its content if it exists
+      # Returns the file content if it's a valid file, otherwise returns the original string
+      def resolve_query_content(query_string)
+        return query_string if query_string.nil? || query_string.empty?
+
+        # Check if the string looks like a file path (contains path separators or has a file extension)
+        # and if it exists as a file
+        if (query_string.include?("/") || query_string.include?("\\") || query_string.match?(/\.[a-zA-Z0-9]+$/)) &&
+            File.exist?(query_string) && File.file?(query_string)
+
+          begin
+            file_content = File.read(query_string).strip
+            LlmTeam::Output.puts("Reading query from file: #{query_string}", type: :debug) if @options[:verbose]
+            return file_content
+          rescue => e
+            LlmTeam::Output.puts("Warning: Could not read file '#{query_string}': #{e.message}", type: :warning)
+            LlmTeam::Output.puts("Using the string as-is instead.", type: :warning)
+            return query_string
+          end
+        end
+
+        # Return original string if it's not a file or doesn't exist
+        query_string
+      end
+
       # Handles multiline input with clear instructions for users
       # Supports both single-line and multiline input
       # Users can finish multiline input by pressing Ctrl+D or by typing just a dot (.) on a new line
@@ -307,7 +332,7 @@ module LlmTeam
             # Non-interactive mode with single query
             query = args.shift
             if query
-              @options[:query] = query
+              @options[:query] = resolve_query_content(query)
               @options[:interactive] = false
             else
               LlmTeam::Output.puts("--query requires a query string", type: :error)
@@ -320,7 +345,7 @@ module LlmTeam
               exit 1
             else
               # Treat as query for non-interactive mode
-              @options[:query] = arg
+              @options[:query] = resolve_query_content(arg)
               @options[:interactive] = false
             end
           end
@@ -344,12 +369,14 @@ module LlmTeam
             --searxng-mcp URL       Set SearXNG MCP server URL (default: http://localhost:7778)
             --verbose               Enable verbose output
             --quiet                 Enable quiet output (minimal output)
-            -q, --query QUERY       Run in non-interactive mode with single query
+            -q, --query QUERY       Run in non-interactive mode with single query (supports file paths)
 
           Examples:
             llm_team                                    # Interactive mode
             llm_team "What is machine learning?"        # Single query mode
             llm_team -q "Explain quantum computing"     # Single query mode
+            llm_team ./my_query.txt                     # Single query mode from file
+            llm_team -q ./questions.md                  # Single query mode from file
             llm_team --model "gpt-4" --verbose         # Custom model with verbose output
             llm_team --agents-path ./my_agents         # Load auxiliary agents from additional directory
             llm_team --searxng-mcp http://localhost:8080 # Use custom SearXNG MCP server
