@@ -201,4 +201,98 @@ RSpec.describe LlmTeam::API do
       end
     end
   end
+
+  describe ".list_auxiliary_agents" do
+    describe "with existing auxiliary agents" do
+      it "returns array of available auxiliary agent tool names" do
+        agents = LlmTeam::API.list_auxiliary_agents
+
+        # Should include the existing auxiliary agents
+        expect(agents).to include(:web_research, :perform_math_operation)
+      end
+
+      it "returns multiple agents when multiple files exist" do
+        agents = LlmTeam::API.list_auxiliary_agents
+
+        # Should have at least the existing auxiliary agents
+        expect(agents.size).to be >= 2
+        expect(agents).to include(:web_research, :perform_math_operation)
+      end
+    end
+
+    describe "with invalid auxiliary agent paths" do
+      it "returns empty array when auxiliary agents path does not exist" do
+        original_paths = LlmTeam.configuration.auxiliary_agents_paths
+
+        LlmTeam.configure do |config|
+          config.auxiliary_agents_paths = ["/nonexistent/path"]
+        end
+
+        agents = LlmTeam::API.list_auxiliary_agents
+
+        expect(agents).to eq([])
+
+        # Restore original paths
+        LlmTeam.configure do |config|
+          config.auxiliary_agents_paths = original_paths
+        end
+      end
+
+      it "returns empty array when auxiliary agents paths is nil" do
+        original_paths = LlmTeam.configuration.auxiliary_agents_paths
+
+        LlmTeam.configure do |config|
+          config.auxiliary_agents_paths = nil
+        end
+
+        agents = LlmTeam::API.list_auxiliary_agents
+
+        expect(agents).to eq([])
+
+        # Restore original paths
+        LlmTeam.configure do |config|
+          config.auxiliary_agents_paths = original_paths
+        end
+      end
+    end
+  end
+
+  describe ".auxiliary_agent_loaded?" do
+    describe "with existing auxiliary agents" do
+      it "returns true for existing agent names" do
+        expect(LlmTeam::API.auxiliary_agent_loaded?("web_research")).to be true
+        expect(LlmTeam::API.auxiliary_agent_loaded?(:web_research)).to be true
+        expect(LlmTeam::API.auxiliary_agent_loaded?("perform_math_operation")).to be true
+        expect(LlmTeam::API.auxiliary_agent_loaded?(:perform_math_operation)).to be true
+      end
+
+      it "returns false for non-existing agent names" do
+        expect(LlmTeam::API.auxiliary_agent_loaded?("nonexistent_tool")).to be false
+        expect(LlmTeam::API.auxiliary_agent_loaded?(:nonexistent_tool)).to be false
+      end
+
+      it "handles case sensitivity correctly" do
+        expect(LlmTeam::API.auxiliary_agent_loaded?("WEB_RESEARCH")).to be false
+        expect(LlmTeam::API.auxiliary_agent_loaded?("Web_Research")).to be false
+      end
+    end
+
+    describe "with invalid auxiliary agent paths" do
+      it "returns false for any agent name when paths are invalid" do
+        original_paths = LlmTeam.configuration.auxiliary_agents_paths
+
+        LlmTeam.configure do |config|
+          config.auxiliary_agents_paths = ["/nonexistent/path"]
+        end
+
+        expect(LlmTeam::API.auxiliary_agent_loaded?("web_research")).to be false
+        expect(LlmTeam::API.auxiliary_agent_loaded?("nonexistent")).to be false
+
+        # Restore original paths
+        LlmTeam.configure do |config|
+          config.auxiliary_agents_paths = original_paths
+        end
+      end
+    end
+  end
 end

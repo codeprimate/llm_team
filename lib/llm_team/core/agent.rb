@@ -505,84 +505,60 @@ module LlmTeam
 
       private
 
-      # Load auxiliary agents from configured paths
+      # Load auxiliary agents from configured paths using shared discovery logic
       def load_auxiliary_agents
         config = LlmTeam.configuration
         return unless config.auxiliary_agents_paths&.any?
 
+        # Get this agent's class name for namespace filtering
+        this_agent_class_name = self.class.name.split("::").last
+
+        # Use shared discovery logic to find auxiliary agent files
+        files = LlmTeam::AuxiliaryAgentDiscovery.discover_auxiliary_agent_files(config)
+
+        files.each do |file|
+          # Determine base path for this file
+          base_path = find_base_path_for_file(file, config)
+          next unless base_path
+
+          # Extract agent info using shared logic
+          agent_info = LlmTeam::AuxiliaryAgentDiscovery.extract_agent_info_from_file(file, base_path)
+          next unless agent_info
+
+          # Check if this auxiliary agent belongs to THIS agent's namespace
+          expected_namespace_prefix = "LlmTeam::Agents::Auxiliary::#{this_agent_class_name}::"
+          unless agent_info[:class_name].start_with?(expected_namespace_prefix)
+            next
+          end
+
+          # Load and register the auxiliary agent
+          load_and_register_auxiliary_agent(agent_info)
+        end
+      end
+
+      # Load and register a single auxiliary agent
+      def load_and_register_auxiliary_agent(agent_info)
+        agent_class = agent_info[:agent_class]
+        tool_name = agent_info[:tool_name]
+        class_name = agent_info[:class_name]
+
+        agent_instance = agent_class.new
+        register_tool(tool_name, agent_instance)
+
+        LlmTeam::Output.puts("Loaded auxiliary agent: #{tool_name} (#{class_name})", type: :debug, color: :green)
+      rescue => e
+        LlmTeam::Output.puts("Failed to load #{File.basename(agent_info[:file_path])}: #{e.message}", type: :warning)
+      end
+
+      # Find the base path for a given file by matching against configured paths
+      def find_base_path_for_file(file, config)
         config.auxiliary_agents_paths.each do |path|
           auxiliary_agents_path = File.expand_path(path)
-          next unless Dir.exist?(auxiliary_agents_path)
-
-          load_auxiliary_agents_from_path(auxiliary_agents_path)
+          if file.start_with?(auxiliary_agents_path)
+            return auxiliary_agents_path
+          end
         end
-      end
-
-      # Scan directory and load all auxiliary agent files
-      def load_auxiliary_agents_from_path(path)
-        Dir.glob(File.join(path, "**", "*_agent.rb")).each do |file|
-          load_auxiliary_agent_file(file, path)
-        end
-      end
-
-      # Load and register a single auxiliary agent file
-      def load_auxiliary_agent_file(file, base_path)
-        auxiliary_agents_path = File.expand_path(base_path)
-
-        # Get the relative path from the auxiliary agents directory
-        relative_path = file.sub(auxiliary_agents_path + "/", "").gsub(/\.rb$/, "")
-
-        # Build namespace from directory structure and filename
-        # Examples:
-        # "primary_agent/extra_tool_agent.rb" -> ["PrimaryAgent", "ExtraToolAgent"]
-        # "primary_agent/extra_tool_agent_subtool_agent.rb" -> ["PrimaryAgent", "ExtraToolAgent", "SubtoolAgent"]
-        namespace_parts = relative_path.split("/").map do |part|
-          part.split("_").map(&:capitalize).join
-        end
-
-        # Build full class name
-        full_class_name = "LlmTeam::Agents::Auxiliary::#{namespace_parts.join("::")}"
-
-        # Check if this auxiliary agent belongs to THIS agent's namespace
-        # e.g., PrimaryAgent should only load agents under LlmTeam::Agents::Auxiliary::PrimaryAgent::*
-        this_agent_class_name = self.class.name.split("::").last
-        expected_namespace_prefix = "LlmTeam::Agents::Auxiliary::#{this_agent_class_name}::"
-
-        unless full_class_name.start_with?(expected_namespace_prefix)
-          return
-        end
-
-        # Only require if namespace matches
-        require file
-
-        # Check if the expected class exists in the derived namespace
-        begin
-          agent_class = Object.const_get(full_class_name)
-        rescue NameError
-          LlmTeam::Output.puts("Skipping #{File.basename(file)}: Expected class #{full_class_name} not found", type: :warning)
-          return
-        end
-
-        if validate_auxiliary_agent_class(agent_class)
-          tool_name = agent_class.tool_schema[:function][:name].to_sym
-          agent_instance = agent_class.new
-          register_tool(tool_name, agent_instance)
-
-          LlmTeam::Output.puts("Loaded auxiliary agent: #{tool_name} (#{full_class_name})", type: :debug, color: :green)
-        end
-      rescue => e
-        LlmTeam::Output.puts("Failed to load #{File.basename(file)}: #{e.message}", type: :warning)
-      end
-
-      # Validate that the loaded class is a proper auxiliary agent
-      def validate_auxiliary_agent_class(agent_class)
-        return false unless agent_class < LlmTeam::Core::Agent
-        return false unless agent_class.respond_to?(:tool_schema)
-        return false unless agent_class.tool_schema.is_a?(Hash)
-        return false unless agent_class.tool_schema.dig(:function, :name)
-        true
-      rescue
-        false
+        nil
       end
     end
   end

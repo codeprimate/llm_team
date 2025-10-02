@@ -25,6 +25,11 @@ require_relative "llm_team/agents/core/primary_agent"
 # CLI
 require_relative "llm_team/cli/application"
 
+# API module for DSL-style usage
+require_relative "llm_team/auxiliary_agent_discovery"
+require_relative "llm_team/api"
+require_relative "llm_team/response"
+
 module LlmTeam
   # Configuration access
   def self.configuration
@@ -40,6 +45,19 @@ module LlmTeam
   ROLE_USER = :user
   ROLE_ASSISTANT = :assistant
   ROLE_TOOL = :tool
+
+  # Module-level API methods for DSL-style usage
+  def self.ask(query)
+    API.ask(query)
+  end
+
+  def self.list_auxiliary_agents
+    API.list_auxiliary_agents
+  end
+
+  def self.auxiliary_agent_loaded?(name)
+    API.auxiliary_agent_loaded?(name)
+  end
 end
 
 # LLM Team Primary Agent - Setup and Usage

@@ -23,5 +23,33 @@ module LlmTeam
       # Create Response object with error
       LlmTeam::Response.new(nil, nil, error: e.message)
     end
+
+    # List all available auxiliary agents
+    #
+    # @return [Array<Symbol>] Array of available auxiliary agent tool names
+    def self.list_auxiliary_agents
+      get_auxiliary_agent_tool_names
+    end
+
+    # Check if a specific auxiliary agent is loaded
+    #
+    # @param name [String, Symbol] The auxiliary agent name to check
+    # @return [Boolean] True if the auxiliary agent is available
+    def self.auxiliary_agent_loaded?(name)
+      tool_name = name.to_sym
+      get_auxiliary_agent_tool_names.include?(tool_name)
+    end
+
+    private
+
+    # Get auxiliary agent tool names using shared discovery logic
+    #
+    # @return [Array<Symbol>] Array of auxiliary agent tool names
+    def self.get_auxiliary_agent_tool_names
+      LlmTeam::AuxiliaryAgentDiscovery.extract_tool_names(LlmTeam.configuration)
+    rescue => e
+      # If anything goes wrong, return empty array (following existing error handling pattern)
+      []
+    end
   end
 end
