@@ -183,4 +183,250 @@ RSpec.describe LlmTeam do
       expect(LlmTeam::AgentError).to be < StandardError
     end
   end
+
+  describe "Response class" do
+    let(:mock_primary_agent) do
+      double("PrimaryAgent").tap do |agent|
+        allow(agent).to receive(:name).and_return("TestPrimaryAgent")
+        allow(agent).to receive(:get_total_token_usage).and_return(150)
+        allow(agent).to receive(:instance_variable_defined?).with(:@total_tokens_used).and_return(true)
+        allow(agent).to receive(:instance_variable_get).with(:@total_tokens_used).and_return(100)
+        allow(agent).to receive(:instance_variable_defined?).with(:@total_latency_ms).and_return(true)
+        allow(agent).to receive(:instance_variable_get).with(:@total_latency_ms).and_return(2000.5)
+        allow(agent).to receive(:instance_variable_defined?).with(:@llm_calls_count).and_return(true)
+        allow(agent).to receive(:instance_variable_get).with(:@llm_calls_count).and_return(3)
+        allow(agent).to receive(:instance_variable_defined?).with(:@total_tool_calls).and_return(true)
+        allow(agent).to receive(:instance_variable_get).with(:@total_tool_calls).and_return(2)
+        allow(agent).to receive(:instance_variable_defined?).with(:@available_tools).and_return(true)
+        allow(agent).to receive(:instance_variable_get).with(:@available_tools).and_return({})
+        allow(agent).to receive(:instance_variable_defined?).with(:@conversation).and_return(true)
+        allow(agent).to receive(:instance_variable_get).with(:@conversation).and_return(mock_conversation)
+      end
+    end
+
+    let(:mock_conversation) do
+      double("Conversation").tap do |conv|
+        allow(conv).to receive(:respond_to?).with(:conversation_history).and_return(true)
+        allow(conv).to receive(:conversation_history).and_return([
+          {role: :user, content: "Test question"},
+          {role: :assistant, content: "Test answer"}
+        ])
+      end
+    end
+
+    let(:mock_tool_agent) do
+      double("ToolAgent").tap do |agent|
+        allow(agent).to receive(:name).and_return("TestToolAgent")
+        allow(agent).to receive(:instance_variable_get).with(:@total_tokens_used).and_return(50)
+        allow(agent).to receive(:instance_variable_get).with(:@total_latency_ms).and_return(500.0)
+        allow(agent).to receive(:instance_variable_get).with(:@llm_calls_count).and_return(1)
+        allow(agent).to receive(:instance_variable_get).with(:@total_tool_calls).and_return(1)
+      end
+    end
+
+    describe "initialization" do
+      it "creates response with answer and performance data" do
+        response = LlmTeam::Response.new(mock_primary_agent, "Test answer")
+
+        expect(response.answer).to eq("Test answer")
+        expect(response.tokens_used).to eq(150)
+        expect(response.latency_ms).to eq(2000.5)
+        expect(response.error).to be_nil
+        expect(response.success?).to be true
+        expect(response.error?).to be false
+      end
+
+      it "creates response with error" do
+        response = LlmTeam::Response.new(mock_primary_agent, nil, error: "Test error")
+
+        expect(response.answer).to be_nil
+        expect(response.error).to eq("Test error")
+        expect(response.success?).to be false
+        expect(response.error?).to be true
+      end
+
+      it "creates immutable response object" do
+        response = LlmTeam::Response.new(mock_primary_agent, "Test answer")
+        expect(response).to be_frozen
+      end
+    end
+
+    describe "performance data extraction" do
+      it "extracts total token usage from primary agent" do
+        response = LlmTeam::Response.new(mock_primary_agent, "Test answer")
+        expect(response.tokens_used).to eq(150)
+      end
+
+      it "extracts total latency from primary agent" do
+        response = LlmTeam::Response.new(mock_primary_agent, "Test answer")
+        expect(response.latency_ms).to eq(2000.5)
+      end
+
+      it "handles missing performance data gracefully" do
+        agent_without_data = double("PrimaryAgent").tap do |agent|
+          allow(agent).to receive(:name).and_return("TestPrimaryAgent")
+          allow(agent).to receive(:get_total_token_usage).and_raise(StandardError, "Method not available")
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_latency_ms).and_return(false)
+          allow(agent).to receive(:instance_variable_defined?).with(:@available_tools).and_return(false)
+          allow(agent).to receive(:instance_variable_defined?).with(:@conversation).and_return(false)
+        end
+
+        response = LlmTeam::Response.new(agent_without_data, "Test answer")
+        expect(response.tokens_used).to eq(0)
+        expect(response.latency_ms).to eq(0)
+      end
+    end
+
+    describe "agent info extraction" do
+      it "extracts primary agent information" do
+        response = LlmTeam::Response.new(mock_primary_agent, "Test answer")
+
+        expect(response.agent_info).to have_key(:primary_agent)
+        expect(response.agent_info[:primary_agent][:name]).to eq("TestPrimaryAgent")
+        expect(response.agent_info[:primary_agent][:tokens_used]).to eq(100)
+        expect(response.agent_info[:primary_agent][:latency_ms]).to eq(2000.5)
+        expect(response.agent_info[:primary_agent][:llm_calls_count]).to eq(3)
+        expect(response.agent_info[:primary_agent][:tool_calls_count]).to eq(2)
+      end
+
+      it "extracts tool agent information" do
+        agent_with_tools = double("PrimaryAgent").tap do |agent|
+          allow(agent).to receive(:name).and_return("TestPrimaryAgent")
+          allow(agent).to receive(:get_total_token_usage).and_return(200)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_tokens_used).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_tokens_used).and_return(100)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_latency_ms).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_latency_ms).and_return(2000.5)
+          allow(agent).to receive(:instance_variable_defined?).with(:@llm_calls_count).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@llm_calls_count).and_return(3)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_tool_calls).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_tool_calls).and_return(2)
+          allow(agent).to receive(:instance_variable_defined?).with(:@available_tools).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@available_tools).and_return({
+            test_tool: mock_tool_agent
+          })
+          allow(agent).to receive(:instance_variable_defined?).with(:@conversation).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@conversation).and_return(mock_conversation)
+        end
+
+        response = LlmTeam::Response.new(agent_with_tools, "Test answer")
+
+        expect(response.agent_info).to have_key(:tool_agents)
+        expect(response.agent_info[:tool_agents]).to have_key(:test_tool)
+        expect(response.agent_info[:tool_agents][:test_tool][:name]).to eq("TestToolAgent")
+        expect(response.agent_info[:tool_agents][:test_tool][:tokens_used]).to eq(50)
+        expect(response.agent_info[:tool_agents][:test_tool][:latency_ms]).to eq(500.0)
+      end
+
+      it "calculates summary statistics" do
+        agent_with_tools = double("PrimaryAgent").tap do |agent|
+          allow(agent).to receive(:name).and_return("TestPrimaryAgent")
+          allow(agent).to receive(:get_total_token_usage).and_return(200)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_tokens_used).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_tokens_used).and_return(100)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_latency_ms).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_latency_ms).and_return(2000.5)
+          allow(agent).to receive(:instance_variable_defined?).with(:@llm_calls_count).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@llm_calls_count).and_return(3)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_tool_calls).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_tool_calls).and_return(2)
+          allow(agent).to receive(:instance_variable_defined?).with(:@available_tools).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@available_tools).and_return({
+            test_tool: mock_tool_agent
+          })
+          allow(agent).to receive(:instance_variable_defined?).with(:@conversation).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@conversation).and_return(mock_conversation)
+        end
+
+        response = LlmTeam::Response.new(agent_with_tools, "Test answer")
+
+        expect(response.agent_info).to have_key(:summary)
+        expect(response.agent_info[:summary][:total_tokens_used]).to eq(150) # 100 + 50
+        expect(response.agent_info[:summary][:total_latency_ms]).to eq(2500.5) # 2000.5 + 500.0
+        expect(response.agent_info[:summary][:total_llm_calls]).to eq(4) # 3 + 1
+        expect(response.agent_info[:summary][:tool_agents_count]).to eq(1)
+      end
+    end
+
+    describe "conversation context extraction" do
+      it "extracts conversation history" do
+        response = LlmTeam::Response.new(mock_primary_agent, "Test answer")
+
+        expect(response.conversation_context).to be_an(Array)
+        expect(response.conversation_context.size).to eq(2)
+        expect(response.conversation_context.first[:role]).to eq(:user)
+        expect(response.conversation_context.first[:content]).to eq("Test question")
+        expect(response.conversation_context.last[:role]).to eq(:assistant)
+        expect(response.conversation_context.last[:content]).to eq("Test answer")
+      end
+
+      it "handles missing conversation data gracefully" do
+        agent_without_conversation = double("PrimaryAgent").tap do |agent|
+          allow(agent).to receive(:name).and_return("TestPrimaryAgent")
+          allow(agent).to receive(:get_total_token_usage).and_return(150)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_tokens_used).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_tokens_used).and_return(100)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_latency_ms).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_latency_ms).and_return(2000.5)
+          allow(agent).to receive(:instance_variable_defined?).with(:@llm_calls_count).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@llm_calls_count).and_return(3)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_tool_calls).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_tool_calls).and_return(2)
+          allow(agent).to receive(:instance_variable_defined?).with(:@available_tools).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@available_tools).and_return({})
+          allow(agent).to receive(:instance_variable_defined?).with(:@conversation).and_return(false)
+        end
+
+        response = LlmTeam::Response.new(agent_without_conversation, "Test answer")
+        expect(response.conversation_context).to eq([])
+      end
+    end
+
+    describe "serialization" do
+      it "converts to hash with all attributes" do
+        response = LlmTeam::Response.new(mock_primary_agent, "Test answer")
+        hash = response.to_hash
+
+        expect(hash).to be_a(Hash)
+        expect(hash[:answer]).to eq("Test answer")
+        expect(hash[:tokens_used]).to eq(150)
+        expect(hash[:latency_ms]).to eq(2000.5)
+        expect(hash[:agent_info]).to be_a(Hash)
+        expect(hash[:conversation_context]).to be_an(Array)
+        expect(hash[:error]).to be_nil
+      end
+
+      it "includes error in hash when present" do
+        response = LlmTeam::Response.new(mock_primary_agent, nil, error: "Test error")
+        hash = response.to_hash
+
+        expect(hash[:error]).to eq("Test error")
+        expect(hash[:answer]).to be_nil
+      end
+    end
+
+    describe "error handling" do
+      it "handles agent info extraction errors gracefully" do
+        agent_with_errors = double("PrimaryAgent").tap do |agent|
+          allow(agent).to receive(:name).and_return("TestPrimaryAgent")
+          allow(agent).to receive(:get_total_token_usage).and_return(150)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_tokens_used).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_tokens_used).and_raise(StandardError, "Access error")
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_latency_ms).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_latency_ms).and_return(2000.5)
+          allow(agent).to receive(:instance_variable_defined?).with(:@llm_calls_count).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@llm_calls_count).and_return(3)
+          allow(agent).to receive(:instance_variable_defined?).with(:@total_tool_calls).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@total_tool_calls).and_return(2)
+          allow(agent).to receive(:instance_variable_defined?).with(:@available_tools).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@available_tools).and_return({})
+          allow(agent).to receive(:instance_variable_defined?).with(:@conversation).and_return(true)
+          allow(agent).to receive(:instance_variable_get).with(:@conversation).and_return(mock_conversation)
+        end
+
+        response = LlmTeam::Response.new(agent_with_errors, "Test answer")
+        expect(response.agent_info[:primary_agent][:error]).to eq("Performance data unavailable")
+      end
+    end
+  end
 end
