@@ -9,7 +9,7 @@ A multi-agent LLM orchestration system that uses specialized AI agents working t
 - Ruby 3.1+
 - OpenRouter API key
 
-### GitHub Installation (Recommended)
+### Option 1: Install from GitHub (Recommended)
 
 Add to your Gemfile:
 
@@ -23,13 +23,49 @@ Then install:
 bundle install
 ```
 
-### Development Setup
+### Option 2: Install from Local Clone
+
+If you've cloned the repository locally:
 
 ```bash
-# Clone and install for development
+# Clone the repository
+git clone https://github.com/codeprimate/llm_team.git
+cd llm_team
+
+# Install dependencies
+bundle install
+
+# Build and install the gem locally
+bundle exec rake install_local
+```
+
+Or add to your Gemfile using the local path:
+
+```ruby
+gem "llm_team", path: "/path/to/llm_team"
+```
+
+Then run:
+
+```bash
+bundle install
+```
+
+### Development Setup
+
+For development work on the gem itself:
+
+```bash
+# Clone and setup for development
 git clone https://github.com/codeprimate/llm_team.git
 cd llm_team
 bundle install
+
+# Run tests to verify installation
+bundle exec rake test
+
+# Build and validate the gem
+bundle exec rake build_validate
 ```
 
 ### Environment Setup
@@ -323,14 +359,29 @@ echo $LLM_TEAM_MODEL
 # Run tests
 bundle exec rake test
 
+# Run tests with coverage
+bundle exec rake test:coverage
+
 # Run linting
 bundle exec rake standardrb
+
+# Run all linting tools
+bundle exec rake lint
 
 # Build and validate gem
 bundle exec rake build_validate
 
+# Install gem locally for testing
+bundle exec rake install_local
+
+# Uninstall local gem
+bundle exec rake uninstall_local
+
 # Clean build artifacts
 bundle exec rake clean
+
+# Run default task (linting + tests)
+bundle exec rake
 ```
 
 ### Getting Help
