@@ -34,6 +34,29 @@ export LLM_TEAM_MAX_ITERATIONS='10'
 export LLM_TEAM_VERBOSE='true'
 ```
 
+## Web Search Capabilities
+
+LLM Team includes powerful web search capabilities through integration with [SearXNG](https://github.com/codeprimate/searxng_docker), a privacy-respecting metasearch engine.
+
+### SearXNG Docker Setup
+
+**Required for web search functionality**: The LLM Team uses a locally hosted SearXNG Docker cluster to provide web search capabilities to its agents. This setup aggregates results from multiple search engines while maintaining privacy.
+
+**Features:**
+- **Privacy-First**: No user tracking or data collection
+- **Multi-Engine**: Aggregates results from 70+ search services
+- **MCP Integration**: Model Context Protocol server for AI integration
+- **Local Control**: Self-hosted with complete data privacy
+- **API Access**: REST API for programmatic searches
+
+**Configuration**: Once running, configure LLM Team to use your SearXNG instance:
+```bash
+export SEARXNG_MCP_URL='http://localhost:7778'
+# Or use CLI flag: --searxng-mcp http://localhost:7778
+```
+
+For setup instructions, see the [SearXNG Docker repository](https://github.com/codeprimate/searxng_docker).
+
 ## CLI Usage
 
 ### Basic Commands
