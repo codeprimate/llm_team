@@ -129,7 +129,7 @@ module LlmTeam
       rescue => e
         # Handle cases where performance data is unavailable
         agent_info = {
-          primary_agent: {name: primary_agent.name, error: "Performance data unavailable"},
+          primary_agent: {name: primary_agent&.name || "Unknown", error: "Performance data unavailable"},
           tool_agents: {},
           summary: {error: "Performance data extraction failed"}
         }

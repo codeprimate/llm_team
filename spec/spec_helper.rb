@@ -3,6 +3,7 @@
 require "bundler/setup"
 require "llm_team"
 require_relative "../lib/llm_team/response"
+require_relative "../lib/llm_team/api"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
