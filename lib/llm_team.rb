@@ -65,7 +65,7 @@ end
 # Prerequisites:
 # 1. Install dependencies: `bundle install` (requires ruby-openai gem)
 # 2. Set API key: `export OPENROUTER_API_KEY='your_api_key_here'`
-# 3. Run: `ruby llm_team.rb`
+# 3. Run: `bin/llm_team` (CLI) or `require 'llm_team'` (programmatic)
 #
 # Key Features:
 # - Multi-agent coordination with research, critique, and synthesis workflow
@@ -81,12 +81,7 @@ end
 # - Interactive CLI application with cross-platform command handling
 #
 # Usage Examples:
-# - Interactive mode: `ruby llm_team.rb`
-# - IRB integration: `irb -r ./llm_team.rb`
-# - Direct execution: `LlmTeam::CLI::Application.new.run`
-
-# Direct execution entry point
-if __FILE__ == $0
-  # When run directly, process command line arguments
-  LlmTeam::CLI::Application.new.run
-end
+# - CLI usage: `bin/llm_team` or `llm_team` (if installed as gem)
+# - Programmatic usage: `require 'llm_team'; LlmTeam.ask("question")`
+# - IRB integration: `irb -r ./lib/llm_team`
+# - Configuration: `LlmTeam.configure { |config| config.api_key = "key" }`

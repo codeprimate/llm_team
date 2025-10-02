@@ -1,0 +1,4 @@
+source "https://rubygems.org"
+
+# Test local git installation (simulates GitHub installation)
+gem "llm_team", git: "file:///Users/patrick/Code/llm_team"

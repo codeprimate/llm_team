@@ -9,16 +9,43 @@ A multi-agent LLM orchestration system that uses specialized AI agents working t
 - Ruby 3.1+
 - OpenRouter API key
 
-### Setup
+### GitHub Installation (Recommended)
+
+Add to your Gemfile:
+
+```ruby
+gem "llm_team", git: "https://github.com/codeprimate/llm_team.git"
+```
+
+Then install:
 
 ```bash
-# Clone and install
-git clone <repository-url>
+bundle install
+```
+
+### Development Setup
+
+```bash
+# Clone and install for development
+git clone https://github.com/codeprimate/llm_team.git
 cd llm_team
 bundle install
+```
 
-# Set your API key
+### Environment Setup
+
+Set your API key:
+
+```bash
 export OPENROUTER_API_KEY='your_api_key_here'
+```
+
+Optional configuration:
+
+```bash
+export LLM_TEAM_MODEL='google/gemini-2.5-flash'  # Default model
+export LLM_TEAM_MAX_ITERATIONS='10'              # Max iterations
+export LLM_TEAM_VERBOSE='true'                   # Verbose output
 ```
 
 ## Usage
@@ -78,6 +105,94 @@ If the file exists and is readable, its content will be used as the query. If no
 - `help` - Show help  
 - `clear` - Clear history
 - `save` - Save last query and response to timestamped markdown file
+
+## Programmatic API
+
+### Basic Usage
+
+```ruby
+require 'llm_team'
+
+# Simple question
+response = LlmTeam.ask("What is machine learning?")
+puts response.answer
+puts "Tokens used: #{response.tokens_used}"
+puts "Latency: #{response.latency_ms}ms"
+```
+
+### Configuration
+
+```ruby
+# Configure the system
+LlmTeam.configure do |config|
+  config.api_key = "your-api-key"  # Overrides OPENROUTER_API_KEY
+  config.model = "gpt-4"           # Overrides LLM_TEAM_MODEL
+  config.max_iterations = 15       # Overrides LLM_TEAM_MAX_ITERATIONS
+  config.verbose = true            # Overrides LLM_TEAM_VERBOSE
+  config.add_auxiliary_agents_path("./my_agents")
+end
+
+# Ask questions with custom configuration
+response = LlmTeam.ask("Explain quantum computing")
+```
+
+### Response Object
+
+The `LlmTeam.ask()` method returns a structured response object:
+
+```ruby
+response = LlmTeam.ask("What is AI?")
+
+# Core response data
+response.answer          # => "AI is..."
+response.tokens_used     # => 150
+response.latency_ms      # => 2500
+response.error          # => nil (or error message if failed)
+
+# Detailed performance metrics
+response.agent_info     # => {
+#   primary: { tokens: 100, latency_ms: 2000, calls: 1 },
+#   research: { tokens: 30, latency_ms: 300, calls: 1 },
+#   critic: { tokens: 20, latency_ms: 200, calls: 1 },
+#   summary: { total_agents: 3, total_tokens: 150, total_latency_ms: 2500 }
+# }
+
+# Full conversation context
+response.conversation_context  # => [
+#   { role: "user", content: "What is AI?" },
+#   { role: "assistant", content: "AI is..." }
+# ]
+
+# Serialization
+response.to_hash  # => Complete hash representation
+```
+
+### Auxiliary Agent Discovery
+
+```ruby
+# List available auxiliary agents
+agents = LlmTeam.list_auxiliary_agents
+# => [:web_research, :perform_math_operation]
+
+# Check if specific agent is available
+LlmTeam.auxiliary_agent_loaded?(:web_research)
+# => true
+
+LlmTeam.auxiliary_agent_loaded?(:nonexistent_agent)
+# => false
+```
+
+### Error Handling
+
+```ruby
+response = LlmTeam.ask("Test question")
+
+if response.error
+  puts "Error: #{response.error}"
+else
+  puts "Success: #{response.answer}"
+end
+```
 
 ## Extension System
 
@@ -159,3 +274,67 @@ end
 **Error Handling**: Invalid agents are skipped with warnings, so the system gracefully continues with available tools.
 
 This design allows extending any core agent with domain-specific capabilities without modifying the core system.
+
+## Troubleshooting
+
+### Common Issues
+
+#### Missing API Key
+```
+Error: API key is required
+```
+**Solution**: Set your OpenRouter API key:
+```bash
+export OPENROUTER_API_KEY='your_api_key_here'
+```
+
+#### GitHub Installation Issues
+```
+fatal: could not read Username for 'https://github.com'
+```
+**Solution**: Ensure the repository is public and accessible, or use SSH:
+```ruby
+gem "llm_team", git: "git@github.com:codeprimate/llm_team.git"
+```
+
+#### Dependency Resolution Issues
+```
+Could not find gem 'llm_team'
+```
+**Solution**: Update your bundle and ensure Ruby 3.1+:
+```bash
+bundle update
+ruby --version  # Should be 3.1.0 or higher
+```
+
+#### Configuration Errors
+```
+Error: Invalid configuration
+```
+**Solution**: Check your environment variables and configuration:
+```bash
+echo $OPENROUTER_API_KEY
+echo $LLM_TEAM_MODEL
+```
+
+### Development Workflow
+
+```bash
+# Run tests
+bundle exec rake test
+
+# Run linting
+bundle exec rake standardrb
+
+# Build and validate gem
+bundle exec rake build_validate
+
+# Clean build artifacts
+bundle exec rake clean
+```
+
+### Getting Help
+
+- **Issues**: [GitHub Issues](https://github.com/codeprimate/llm_team/issues)
+- **Documentation**: [GitHub Repository](https://github.com/codeprimate/llm_team)
+- **Changelog**: [CHANGELOG.md](https://github.com/codeprimate/llm_team/blob/main/CHANGELOG.md)
