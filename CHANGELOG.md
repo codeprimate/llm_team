@@ -8,56 +8,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **New DSL-style API**: `LlmTeam.ask("question")` method for simple programmatic usage
-- **Structured Response Object**: `LlmTeam::Response` class with comprehensive metadata including:
+- **DSL-style API**: `LlmTeam.ask("question")` method for simple programmatic usage
+- **Structured Response Objects**: `LlmTeam::Response` class with comprehensive metadata:
   - `answer`: The final response from the LLM
   - `tokens_used`: Total tokens consumed across all agents
   - `latency_ms`: Total latency in milliseconds
-  - `agent_info`: Detailed performance metrics per agent
+  - `agent_info`: Detailed performance metrics per agent (primary + tool agents)
   - `conversation_context`: Full conversation history for debugging
   - `error`: Error information if any occurred
-- **Auxiliary Agent Discovery**: New methods for discovering available auxiliary agents:
+  - `to_hash`: Serialization method for complete data export
+- **Auxiliary Agent Discovery API**: New methods for managing auxiliary agents:
   - `LlmTeam.list_auxiliary_agents`: Returns array of available agent tool names
   - `LlmTeam.auxiliary_agent_loaded?(name)`: Checks if specific agent is available
-- **Comprehensive Test Suite**: 79 tests covering all functionality including:
+- **Enhanced Query Input Methods**: Support for multiple input formats:
+  - Direct string queries: `llm_team "What is machine learning?"`
+  - File path queries: `llm_team ./questions.txt`
+  - Automatic detection of file vs. string input
+- **Comprehensive Test Suite**: 79 tests covering all functionality:
   - API method testing with mocked dependencies
   - Configuration validation and error handling
   - Agent initialization and auxiliary agent loading
   - Performance tracking validation
+  - Response object serialization and error handling
   - CLI functionality preservation
 - **Code Quality Tools**: StandardRB configuration for consistent code style
-- **Enhanced Rakefile**: Development workflow tasks including:
+- **Enhanced Development Workflow**: Rakefile with comprehensive tasks:
   - `test`: Run RSpec test suite
+  - `test:coverage`: Run tests with coverage reporting
   - `standardrb`: Run code quality linting
   - `build_validate`: Build and validate gem installation
   - `install_local`/`uninstall_local`: Local gem testing
   - `clean`: Clean build artifacts
 
-### Changed
-- **Module Structure**: Removed direct execution from `lib/llm_team.rb` to support proper gem usage
-- **API Integration**: New API methods integrate seamlessly with existing configuration system
-- **Performance Tracking**: Enhanced performance data aggregation with detailed agent metrics
-- **Error Handling**: Improved error reporting through structured response objects
-
-### Technical Details
-- **Configuration Preservation**: All existing configuration DSL and environment variable support maintained
-- **CLI Compatibility**: All existing CLI functionality preserved and working
-- **Agent Architecture**: No changes to core agent functionality or initialization
-- **Dependency Management**: Maintains compatibility with existing dependencies (ruby-openai, colorize, symbolic)
-
-### Migration Notes
-- **Breaking Change**: Direct execution via `ruby lib/llm_team.rb` no longer works (use `bin/llm_team` instead)
-- **New Usage Pattern**: Use `LlmTeam.ask("question")` for programmatic access instead of direct agent instantiation
-- **Configuration**: Existing configuration patterns continue to work unchanged
-- **CLI Usage**: All existing CLI commands and options continue to work unchanged
-
-## [0.1.0] - Initial Release
+## [0.1.0] - 2024-01-01
 
 ### Added
-- Multi-agent LLM orchestration system
-- Core agents: Primary, Research, Critic, Presenter
-- Auxiliary agent system with dynamic loading
-- Configuration DSL with environment variable support
-- CLI application with interactive commands
-- Performance tracking and conversation management
-- Tool calling and workflow coordination
+- **Multi-agent LLM orchestration system** with specialized agents:
+  - PrimaryAgent: Workflow orchestration and decision making
+  - ResearchAgent: Information gathering and research
+  - CriticAgent: Quality review and critique
+  - PresenterAgent: Response synthesis and presentation
+- **Auxiliary agent system** with dynamic loading and namespace-based organization
+- **Dual conversation tracking** (ephemeral + persistent) with configurable history behavior
+- **Configuration DSL** with environment variable support
+- **CLI application** with interactive commands and batch processing
+- **Performance tracking** and conversation management across all agents
+- **Tool calling** with LLM-driven orchestration and retry logic
+- **Extension system** for adding domain-specific capabilities to any core agent
+- **OpenRouter integration** with configurable API endpoints
+- **Comprehensive error handling** and graceful degradation
