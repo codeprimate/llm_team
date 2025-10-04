@@ -46,6 +46,15 @@ module LlmTeam
                 * Crawl pages: web_research(operation: "crawl", url: "https://example.com", subpage_limit: 3)
                 * Search with filters: web_research(operation: "search", query: "machine learning", categories: "science", language: "en")
                 * Crawl with filters: web_research(operation: "crawl", url: "https://docs.example.com", filters: ["api", "reference"])
+
+              **MANDATORY CONTENT FETCHING REQUIREMENTS:**
+                - **NEVER rely on search snippets alone** - they provide insufficient detail for comprehensive research
+                - **CONTENT DEPTH**: Full page content provides context, methodology, and nuanced details that summaries cannot capture
+                - **ALWAYS use fetch operations** to obtain full page content from relevant URLs identified in search results
+                - **PRIORITIZE crawl operations** for comprehensive topic coverage when dealing with documentation or multi-page resources
+                - **FETCH MULTIPLE SOURCES**: For important topics, fetch content from multiple relevant pages to ensure complete coverage
+                - **VALIDATE INTERNAL KNOWLEDGE**: Use web research to verify, correct, or update potentially outdated internal knowledge
+                - **CURRENT INFORMATION PRIORITY**: Always prioritize current, verifiable web data over potentially outdated training data
           PROMPT
 
           def initialize(history_behavior: :none, model: nil)
