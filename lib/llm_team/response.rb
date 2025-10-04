@@ -53,7 +53,7 @@ module LlmTeam
 
       begin
         primary_agent.get_total_token_usage
-      rescue => e
+      rescue
         # Handle cases where performance data is unavailable
         0
       end
@@ -76,7 +76,7 @@ module LlmTeam
         end
 
         primary_latency + tool_latency
-      rescue => e
+      rescue
         # Handle cases where performance data is unavailable
         0
       end
@@ -126,7 +126,7 @@ module LlmTeam
           total_llm_calls: total_calls,
           tool_agents_count: agent_info[:tool_agents].size
         }
-      rescue => e
+      rescue
         # Handle cases where performance data is unavailable
         agent_info = {
           primary_agent: {name: primary_agent&.name || "Unknown", error: "Performance data unavailable"},
@@ -148,7 +148,7 @@ module LlmTeam
 
         # Get conversation history with proper error handling
         conversation.conversation_history || []
-      rescue => e
+      rescue
         # Handle cases where conversation data is unavailable
         []
       end

@@ -57,7 +57,6 @@ RSpec.describe LlmTeam do
         expect(config.timeout).to eq(LlmTeam::Configuration::DEFAULT_TIMEOUT)
         expect(config.log_level).to eq(LlmTeam::Configuration::DEFAULT_LOG_LEVEL)
         expect(config.api_base_url).to eq(LlmTeam::Configuration::DEFAULT_API_BASE_URL)
-        expect(config.searxng_url).to eq(LlmTeam::Configuration::DEFAULT_SEARXNG_URL)
         expect(config.verbose).to eq(LlmTeam::Configuration::DEFAULT_VERBOSE)
         expect(config.quiet).to eq(LlmTeam::Configuration::DEFAULT_QUIET)
         expect(config.max_tool_call_response_length).to eq(LlmTeam::Configuration::DEFAULT_MAX_TOOL_CALL_RESPONSE_LENGTH)

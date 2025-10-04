@@ -51,8 +51,7 @@ LLM Team includes powerful web search capabilities through integration with [Sea
 
 **Configuration**: Once running, configure LLM Team to use your SearXNG instance:
 ```bash
-export SEARXNG_MCP_URL='http://localhost:7778'
-# Or use CLI flag: --searxng-mcp http://localhost:7778
+export LLM_TEAM_SEARXNG_URL='http://localhost:7778'
 ```
 
 For setup instructions, see the [SearXNG Docker repository](https://github.com/codeprimate/searxng_docker).
@@ -76,7 +75,6 @@ llm_team [options] [query]
 
   -m, --model MODEL       Set LLM model (default: google/gemini-2.5-flash)
   --agents-path           Additional path for auxiliary agent definitions
-  --searxng-mcp URL       Set SearXNG MCP server URL
   --verbose               Enable verbose output
   --quiet                 Enable quiet output (minimal output)
   -q, --query QUERY       Run in non-interactive mode with single query

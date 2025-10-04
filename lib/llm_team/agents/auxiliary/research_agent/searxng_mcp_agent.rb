@@ -17,6 +17,39 @@ module LlmTeam
         #
         # Output format: "Research: [operation] Result: [content]"
         class SearxngMcpAgent < LlmTeam::Core::Agent
+          # Configuration class for SearxngMcpAgent
+          class Configuration
+            attr_accessor :searxng_url
+
+            DEFAULT_SEARXNG_URL = "http://localhost:7778"
+
+            def initialize
+              @searxng_url = ENV.fetch("LLM_TEAM_SEARXNG_URL", DEFAULT_SEARXNG_URL)
+            end
+
+            # Validate the SearXNG URL configuration
+            def validate!
+              return if @searxng_url.nil? || @searxng_url.empty?
+
+              begin
+                uri = URI(@searxng_url)
+                unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+                  raise ArgumentError, "SearXNG URL must be HTTP or HTTPS"
+                end
+              rescue URI::InvalidURIError => e
+                raise ArgumentError, "Invalid SearXNG URL: #{e.message}"
+              end
+            end
+
+            # Check if configuration is valid
+            def valid?
+              validate!
+              true
+            rescue
+              false
+            end
+          end
+
           # Error raised when MCP server communication fails
           class MCPFailureError < StandardError; end
           SYSTEM_PROMPT = <<~PROMPT
@@ -59,6 +92,7 @@ module LlmTeam
 
           def initialize(history_behavior: :none, model: nil)
             super("SearxngMcpAgent", history_behavior: history_behavior, model: model)
+            @config = Configuration.new
           end
 
           # Main web search operation dispatcher
@@ -141,7 +175,8 @@ module LlmTeam
             require "net/http"
             require "json"
 
-            mcp_url = LlmTeam.configuration.searxng_url
+            config = Configuration.new
+            mcp_url = config.searxng_url
             uri = URI("#{mcp_url}/health")
             http = Net::HTTP.new(uri.host, uri.port)
             http.read_timeout = 2
@@ -156,7 +191,7 @@ module LlmTeam
             else
               false
             end
-          rescue
+          rescue => e
             # Silently handle health check failures to avoid dependency issues
             LlmTeam::Output.puts("Failed to check SearXNG MCP server health: #{e.message}", type: :error)
             false
@@ -243,7 +278,7 @@ module LlmTeam
 
           # HTTP client for MCP server communication
           def call_mcp_tool(tool_name, parameters)
-            mcp_url = LlmTeam.configuration.searxng_url
+            mcp_url = @config.searxng_url
             uri = URI("#{mcp_url}/#{tool_name}")
             http = Net::HTTP.new(uri.host, uri.port)
 

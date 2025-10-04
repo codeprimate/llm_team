@@ -25,7 +25,6 @@ module LlmTeam
         # Set global configuration from CLI options
         LlmTeam.configuration.verbose = @options[:verbose] if @options[:verbose]
         LlmTeam.configuration.quiet = @options[:quiet] if @options[:quiet]
-        LlmTeam.configuration.searxng_url = @options[:searxng_url] if @options[:searxng_url]
 
         primary_agent = LlmTeam::Agents::Core::PrimaryAgent.new(
           max_iterations: @options[:max_iterations] || 20,
@@ -280,13 +279,6 @@ module LlmTeam
           when "--quiet"
             @options[:quiet] = true
             @options[:verbose] = false  # quiet overrides verbose
-          when "--searxng-mcp"
-            searxng_url = args.shift
-            if searxng_url.nil?
-              LlmTeam::Output.puts("--searxng-mcp requires a URL", type: :error)
-              exit 1
-            end
-            @options[:searxng_url] = searxng_url
           when "--query", "-q"
             # Non-interactive mode with single query
             query = args.shift
@@ -325,7 +317,6 @@ module LlmTeam
             -v, --version           Show version information
             -m, --model MODEL       Set LLM model (default: #{LlmTeam::Configuration::DEFAULT_MODEL})
             --agents-path PATH      Add additional path for auxiliary agents
-            --searxng-mcp URL       Set SearXNG MCP server URL (default: http://localhost:7778)
             --verbose               Enable verbose output
             --quiet                 Enable quiet output (minimal output)
             -q, --query QUERY       Run in non-interactive mode with single query (supports file paths)
@@ -338,7 +329,6 @@ module LlmTeam
             llm_team -q ./questions.md                  # Single query mode from file
             llm_team --model "gpt-4" --verbose         # Custom model with verbose output
             llm_team --agents-path ./my_agents         # Load auxiliary agents from additional directory
-            llm_team --searxng-mcp http://localhost:8080 # Use custom SearXNG MCP server
 
           Environment Variables:
             OPENROUTER_API_KEY               Your OpenRouter API key (required)

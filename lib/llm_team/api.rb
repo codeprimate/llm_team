@@ -47,7 +47,7 @@ module LlmTeam
     # @return [Array<Symbol>] Array of auxiliary agent tool names
     def self.get_auxiliary_agent_tool_names
       LlmTeam::AuxiliaryAgentDiscovery.extract_tool_names(LlmTeam.configuration)
-    rescue => e
+    rescue
       # If anything goes wrong, return empty array (following existing error handling pattern)
       []
     end

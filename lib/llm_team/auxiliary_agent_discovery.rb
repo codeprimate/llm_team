@@ -73,7 +73,7 @@ module LlmTeam
           relative_path: relative_path,
           agent_class: agent_class
         }
-      rescue => e
+      rescue
         # Silently skip invalid agents (following existing pattern)
         nil
       end
