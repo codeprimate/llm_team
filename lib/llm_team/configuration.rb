@@ -34,7 +34,7 @@ module LlmTeam
     DEFAULT_API_BASE_URL = "https://openrouter.ai/api/v1"
     DEFAULT_VERBOSE = false
     DEFAULT_QUIET = false
-    DEFAULT_MAX_TOOL_CALL_RESPONSE_LENGTH = 128000
+    DEFAULT_MAX_TOOL_CALL_RESPONSE_LENGTH = 32.kilobytes
 
     def initialize
       # API Configuration
