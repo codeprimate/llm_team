@@ -38,6 +38,9 @@ module LlmTeam
         @current_iteration = nil
         @max_tool_call_response_length = LlmTeam.configuration.max_tool_call_response_length
 
+        # Initialize ToolRunner for tool execution
+        @tool_runner = ToolRunner.new(config)
+
         # Always auto-load auxiliary agents
         load_auxiliary_agents
       end
@@ -328,10 +331,10 @@ module LlmTeam
         response
       end
 
-      # Tool execution dispatcher with error handling and conversation integration
+      # Execute tool calls using ToolRunner and add results to conversation
       #
       # Non-obvious behaviors:
-      # - Tool discovery uses schema introspection, not method reflection
+      # - Uses ToolRunner for tool execution with proper error handling
       # - Always adds assistant message with tool_calls to conversation first
       # - Tool results are added as :tool role messages with specific IDs
       # - Returns boolean indicating if any tools were missing (triggers retry)
@@ -339,57 +342,40 @@ module LlmTeam
         # Record the assistant's tool call request
         @conversation.add_message(LlmTeam::ROLE_ASSISTANT, nil, tool_calls: tool_calls)
 
+        # Execute tools using ToolRunner
+        tool_results = @tool_runner.execute_tool_calls(tool_calls, @available_tools)
+
+        # Update tool call counter from ToolRunner
+        @total_tool_calls = @tool_runner.total_tool_calls
+
         tools_not_found = false
 
-        tool_calls.each do |tool_call|
-          function_name = tool_call.dig("function", "name")
-          arguments_json = tool_call.dig("function", "arguments")
-          arguments = JSON.parse(arguments_json, symbolize_names: true)
-
-          # Increment tool calls counter
-          @total_tool_calls += 1
-
-          LlmTeam::Output.puts("#{name} → #{function_name}", type: :tool)
-          LlmTeam::Output.puts("Args: #{arguments}", type: :debug)
-
-          # Find tool agent by matching schema function name (not method name)
-          tool_agent = @available_tools.values.find { |agent| agent.class.tool_schema[:function][:name] == function_name }
-
-          if tool_agent
-            # Execute tool and capture output
-            tool_output = execute_tool(tool_agent, function_name, arguments)
-            if tool_output.length > @max_tool_call_response_length
-              LlmTeam::Output.puts("Tool output too long, truncating to #{@max_tool_call_response_length} characters", type: :warning)
-              tool_output = tool_output[0, @max_tool_call_response_length] + "\n---\n[TOOL OUTPUT TRUNCATED]\n---\n"
-            end
-
-            # Add tool result to conversation with proper ID linking
-            @conversation.add_message(
-              LlmTeam::ROLE_TOOL,
-              tool_output.to_s,
-              tool_call_id: tool_call["id"],
-              name: function_name
-            )
+        # Process each tool result and add to conversation
+        tool_results.each do |result|
+          # Add output for successful tool execution
+          if result.success?
+            LlmTeam::Output.puts("#{name} → #{result.function_name}", type: :tool)
+            LlmTeam::Output.puts("Output: #{result.output.length} characters", type: :debug)
           else
-            # Handle missing tool gracefully
-            error_message = "Error: Tool '#{function_name}' not found."
-            LlmTeam::Output.puts(error_message, type: :error)
-            @conversation.add_message(
-              LlmTeam::ROLE_TOOL,
-              error_message,
-              tool_call_id: tool_call["id"],
-              name: function_name
-            )
-            tools_not_found = true
+            # Handle tool errors
+            LlmTeam::Output.puts("#{name} → #{result.function_name} (ERROR: #{result.error})", type: :error)
+            LlmTeam::Output.puts("Error: #{result.message}", type: :error)
+
+            # Mark as tools not found for retry logic
+            tools_not_found = true if result.error == :tool_not_found
           end
+
+          # Convert ToolResult to conversation message and add to conversation
+          conversation_message = result.to_conversation_message
+          @conversation.add_message(
+            conversation_message[:role],
+            conversation_message[:content],
+            tool_call_id: conversation_message[:tool_call_id],
+            name: conversation_message[:name]
+          )
         end
 
         tools_not_found
-      end
-
-      # Dynamic tool method invocation with keyword argument spreading
-      def execute_tool(tool_agent, function_name, arguments)
-        tool_agent.public_send(function_name, **arguments)
       end
 
       # Extract tool execution results from conversation history

@@ -14,6 +14,8 @@ require "colorize"
 
 # Core classes
 require_relative "llm_team/core/conversation"
+require_relative "llm_team/core/tool_result"
+require_relative "llm_team/core/tool_runner"
 require_relative "llm_team/core/agent"
 
 # Core agent classes
