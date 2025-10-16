@@ -194,19 +194,28 @@ module LlmTeam
         query_string
       end
 
-      # Handles multiline input using TTY-Prompt for better editing experience
+      # Handles multiline input using a custom implementation to avoid line duplication issues
       # Users can finish input by pressing Ctrl+D
       def get_multiline_input
-        prompt = TTY::Prompt.new
+        puts "Enter your query (Ctrl+D to finish):"
+        lines = []
 
-        # Use TTY-Prompt's multiline input with full editing capabilities
-        input = prompt.multiline("Enter your query (Ctrl+D to finish):")
+        begin
+          loop do
+            print "> "
+            line = STDIN.gets
+            break if line.nil? # Ctrl+D pressed
 
-        # Handle nil input (Ctrl+D on empty input)
-        return nil if input.nil?
+            lines << line.chomp
+          end
+        rescue Interrupt
+          # Handle Ctrl+C gracefully
+          puts "\nInput cancelled."
+          return nil
+        end
 
         # Join lines and clean up
-        result = input.join("\n").strip
+        result = lines.join("\n").strip
         result.empty? ? nil : result
       end
 
