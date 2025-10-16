@@ -5,6 +5,7 @@ require "llm_team"
 require_relative "../lib/llm_team/response"
 require_relative "../lib/llm_team/api"
 require_relative "../lib/llm_team/clients/openrouter_client"
+require_relative "../lib/llm_team/clients/openai_client"
 require_relative "../lib/llm_team/clients/ollama_client"
 
 RSpec.configure do |config|

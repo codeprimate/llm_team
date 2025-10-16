@@ -25,6 +25,7 @@ module LlmTeam
         # Set global configuration from CLI options
         LlmTeam.configuration.verbose = @options[:verbose] if @options[:verbose]
         LlmTeam.configuration.quiet = @options[:quiet] if @options[:quiet]
+        LlmTeam.configuration.llm_provider = @options[:provider] if @options[:provider]
 
         primary_agent = LlmTeam::Agents::Core::PrimaryAgent.new(
           max_iterations: @options[:max_iterations] || 20,
@@ -45,6 +46,7 @@ module LlmTeam
 
         if @options[:verbose]
           LlmTeam::Output.puts("Configuration:", type: :debug)
+          LlmTeam::Output.puts("  Provider: #{@options[:provider] || LlmTeam.configuration.llm_provider}", type: :debug)
           LlmTeam::Output.puts("  Model: #{@options[:model] || LlmTeam::Configuration::DEFAULT_MODEL}", type: :debug)
         end
 
@@ -140,6 +142,7 @@ module LlmTeam
 
         if @options[:verbose]
           LlmTeam::Output.puts("Configuration:", type: :debug)
+          LlmTeam::Output.puts("  Provider: #{@options[:provider] || LlmTeam.configuration.llm_provider}", type: :debug)
           LlmTeam::Output.puts("  Model: #{@options[:model] || "deepseek/deepseek-chat-v3.1 (default)"}", type: :debug)
           LlmTeam::Output.puts("  Max Iterations: #{@options[:max_iterations]}", type: :debug)
           LlmTeam::Output.puts("  History Behavior: #{@options[:history_behavior]}", type: :debug)
@@ -255,6 +258,7 @@ module LlmTeam
         @options = {
           max_iterations: 20,
           model: nil,
+          provider: nil,
           history_behavior: :last,
           verbose: false,
           quiet: false
@@ -276,6 +280,18 @@ module LlmTeam
               LlmTeam::Output.puts("--model requires a model name", type: :error)
               exit 1
             end
+          when "--provider", "-p"
+            provider = args.shift
+            if provider.nil?
+              LlmTeam::Output.puts("--provider requires a provider name", type: :error)
+              exit 1
+            end
+            provider_sym = provider.to_sym
+            unless [:openrouter, :openai, :ollama].include?(provider_sym)
+              LlmTeam::Output.puts("Invalid provider: #{provider}. Supported providers: openrouter, openai, ollama", type: :error)
+              exit 1
+            end
+            @options[:provider] = provider_sym
           when "--agents-path"
             path = args.shift
             if path.nil?
@@ -325,6 +341,7 @@ module LlmTeam
             -h, --help              Show this help message
             -v, --version           Show version information
             -m, --model MODEL       Set LLM model (default: #{LlmTeam::Configuration::DEFAULT_MODEL})
+            -p, --provider PROVIDER Set LLM provider (openrouter, openai, ollama) (default: openrouter)
             --agents-path PATH      Add additional path for auxiliary agents
             --verbose               Enable verbose output
             --quiet                 Enable quiet output (minimal output)
@@ -337,10 +354,16 @@ module LlmTeam
             llm_team ./my_query.txt                     # Single query mode from file
             llm_team -q ./questions.md                  # Single query mode from file
             llm_team --model "gpt-4" --verbose         # Custom model with verbose output
+            llm_team --provider ollama --model llama3.1 # Use Ollama with specific model
+            llm_team -p openai -m gpt-4                # Use OpenAI with GPT-4
             llm_team --agents-path ./my_agents         # Load auxiliary agents from additional directory
 
           Environment Variables:
-            OPENROUTER_API_KEY               Your OpenRouter API key (required)
+            LLM_TEAM_PROVIDER                LLM provider (openrouter, openai, ollama) (default: openrouter)
+            LLM_TEAM_API_KEY                 API key for LLM provider (required for openrouter/openai)
+            LLM_TEAM_BASE_URL                Base URL for LLM provider (auto-detected by provider)
+            LLM_TEAM_MODEL                   Default model name (provider-specific)
+            OPENROUTER_API_KEY               Legacy: OpenRouter API key (backward compatibility)
             LLM_TEAM_AUXILIARY_AGENTS_PATH   Default path for auxiliary agents
             LLM_TEAM_SEARXNG_URL             SearXNG MCP server URL (default: http://localhost:7778)
 

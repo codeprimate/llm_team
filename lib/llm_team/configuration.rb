@@ -33,6 +33,7 @@ module LlmTeam
     DEFAULT_LOG_LEVEL = :info
     # Provider-specific default base URLs
     DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+    DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
     DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
     DEFAULT_VERBOSE = false
     DEFAULT_QUIET = false
@@ -144,8 +145,10 @@ module LlmTeam
     # @return [String] The default base URL for the provider
     def default_base_url_for_provider(provider)
       case provider
-      when :openrouter, :openai
+      when :openrouter
         DEFAULT_OPENROUTER_BASE_URL
+      when :openai
+        DEFAULT_OPENAI_BASE_URL
       when :ollama
         DEFAULT_OLLAMA_BASE_URL
       else

@@ -6,7 +6,7 @@ A multi-agent LLM orchestration system that uses specialized AI agents working t
 
 ### Prerequisites
 - Ruby 3.1+
-- OpenRouter API key
+- API key for your chosen LLM provider (OpenRouter, OpenAI, or Ollama)
 
 ### Installation
 
@@ -26,12 +26,113 @@ gem "llm_team", path: "/path/to/llm_team"
 ```
 
 ### Configuration
+
+**Basic Configuration:**
 ```bash
+# Set your API key
+export LLM_TEAM_API_KEY='your_api_key_here'
+# Or for backward compatibility with OpenRouter
 export OPENROUTER_API_KEY='your_api_key_here'
-# Optional
+
+# Optional settings
+export LLM_TEAM_PROVIDER='openrouter'  # openrouter, openai, or ollama
 export LLM_TEAM_MODEL='google/gemini-2.5-flash'
 export LLM_TEAM_MAX_ITERATIONS='10'
 export LLM_TEAM_VERBOSE='true'
+```
+
+**Provider-Specific Configuration:**
+
+*OpenRouter (default):*
+```bash
+export LLM_TEAM_PROVIDER='openrouter'
+export LLM_TEAM_API_KEY='your_openrouter_key'
+export LLM_TEAM_MODEL='google/gemini-2.5-flash'
+# Base URL automatically defaults to https://openrouter.ai/api/v1
+```
+
+*OpenAI:*
+```bash
+export LLM_TEAM_PROVIDER='openai'
+export LLM_TEAM_API_KEY='your_openai_key'
+export LLM_TEAM_MODEL='gpt-4'
+# Base URL automatically defaults to https://api.openai.com/v1
+```
+
+*Ollama (local):*
+```bash
+export LLM_TEAM_PROVIDER='ollama'
+export LLM_TEAM_MODEL='llama3.1'
+# No API key required
+# Base URL automatically defaults to http://localhost:11434
+```
+
+## LLM Providers
+
+LLM Team supports multiple LLM providers with automatic configuration and provider-aware defaults.
+
+### Supported Providers
+
+**OpenRouter (default)**
+- Access to 200+ models from various providers
+- Competitive pricing and unified API
+- Default base URL: `https://openrouter.ai/api/v1`
+- Requires API key
+
+**OpenAI**
+- Direct access to OpenAI models (GPT-4, GPT-3.5, etc.)
+- Connects directly to OpenAI's API
+- Default base URL: `https://api.openai.com/v1`
+- Requires API key
+
+**Ollama (local)**
+- Run models locally on your machine
+- No API key required
+- Default base URL: `http://localhost:11434`
+- Supports models like Llama, CodeLlama, Mistral, etc.
+
+### Provider Features
+
+| Feature | OpenRouter | OpenAI | Ollama |
+|---------|------------|--------|--------|
+| API Key Required | ✅ | ✅ | ❌ |
+| Local Processing | ❌ | ❌ | ✅ |
+| Model Variety | ✅ | ✅ | ✅ |
+| Cost | Pay per use | Pay per use | Free (after setup) |
+| Privacy | Cloud | Cloud | Local |
+| Internet Required | ✅ | ✅ | ❌ |
+
+### Switching Providers
+
+**Via CLI:**
+```bash
+# Use OpenRouter (default)
+llm_team "What is AI?"
+
+# Switch to Ollama
+llm_team --provider ollama --model llama3.1 "What is AI?"
+
+# Switch to OpenAI
+llm_team --provider openai --model gpt-4 "What is AI?"
+```
+
+**Via Environment Variables:**
+```bash
+# Set default provider
+export LLM_TEAM_PROVIDER=ollama
+export LLM_TEAM_MODEL=llama3.1
+llm_team "What is AI?"
+```
+
+**Via Ruby API:**
+```ruby
+# Configure provider
+LlmTeam.configure do |config|
+  config.llm_provider = :ollama
+  config.model = "llama3.1"
+end
+
+response = LlmTeam.ask("What is AI?")
 ```
 
 ## Web Search Capabilities
@@ -67,6 +168,10 @@ llm_team --verbose
 llm_team "What is machine learning?"
 llm_team ./questions.txt
 llm_team -q "Explain quantum computing"
+
+# Use different providers
+llm_team --provider ollama --model llama3.1 "What is AI?"
+llm_team -p openai -m gpt-4 "Explain quantum computing"
 ```
 
 ### Options
@@ -74,6 +179,7 @@ llm_team -q "Explain quantum computing"
 llm_team [options] [query]
 
   -m, --model MODEL       Set LLM model (default: google/gemini-2.5-flash)
+  -p, --provider PROVIDER Set LLM provider (openrouter, openai, ollama)
   --agents-path           Additional path for auxiliary agent definitions
   --verbose               Enable verbose output
   --quiet                 Enable quiet output (minimal output)
@@ -101,11 +207,42 @@ puts "Tokens: #{response.tokens_used}, Latency: #{response.latency_ms}ms"
 ### Configuration
 ```ruby
 LlmTeam.configure do |config|
+  # Provider configuration
+  config.llm_provider = :openrouter  # :openrouter, :openai, or :ollama
   config.api_key = "your-api-key"
+  config.api_base_url = "https://openrouter.ai/api/v1"  # Optional, auto-detected by provider
+  
+  # Model configuration
   config.model = "gpt-4"
   config.max_iterations = 15
   config.verbose = true
   config.add_auxiliary_agents_path("./my_agents")
+end
+```
+
+**Provider-Specific Examples:**
+```ruby
+# OpenRouter
+LlmTeam.configure do |config|
+  config.llm_provider = :openrouter
+  config.api_key = "your_openrouter_key"
+  config.model = "google/gemini-2.5-flash"
+end
+
+# OpenAI
+LlmTeam.configure do |config|
+  config.llm_provider = :openai
+  config.api_key = "your_openai_key"
+  config.model = "gpt-4"
+  # Base URL automatically defaults to https://api.openai.com/v1
+end
+
+# Ollama (local)
+LlmTeam.configure do |config|
+  config.llm_provider = :ollama
+  config.api_base_url = "http://localhost:11434"
+  config.model = "llama3.1"
+  # No API key required
 end
 ```
 
@@ -245,9 +382,13 @@ bundle exec rake                   # Default task (linting + tests)
 
 | Issue | Solution |
 |-------|----------|
-| `Error: API key is required` | Set `OPENROUTER_API_KEY` environment variable |
+| `Error: API key is required` | Set `LLM_TEAM_API_KEY` or `OPENROUTER_API_KEY` environment variable |
+| `Error: Unsupported LLM provider` | Use `--provider` with one of: openrouter, openai, ollama |
+| `Error: Invalid provider` | Check provider name spelling and supported providers |
 | `Could not find gem 'llm_team'` | Run `bundle update` and ensure Ruby 3.1+ |
-| `Error: Invalid configuration` | Check environment variables: `echo $OPENROUTER_API_KEY` |
+| `Error: Invalid configuration` | Check environment variables: `echo $LLM_TEAM_API_KEY` |
+| `Ollama connection failed` | Ensure Ollama is running locally on port 11434 |
+| `OpenRouter API error` | Verify your API key and model availability |
 
 ## Resources
 

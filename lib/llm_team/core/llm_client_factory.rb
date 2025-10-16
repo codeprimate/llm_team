@@ -15,9 +15,12 @@ module LlmTeam
       # @raise [LlmTeam::ConfigurationError] If the provider is not supported
       def self.create(config)
         case config.llm_provider
-        when :openrouter, :openai
+        when :openrouter
           require_relative "../clients/openrouter_client"
           OpenRouterClient.new(config)
+        when :openai
+          require_relative "../clients/openai_client"
+          OpenAIClient.new(config)
         when :ollama
           require_relative "../clients/ollama_client"
           OllamaClient.new(config)

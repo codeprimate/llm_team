@@ -18,9 +18,9 @@ RSpec.describe LlmTeam::Core::LlmClientFactory do
     context "with openai provider" do
       before { config.llm_provider = :openai }
 
-      it "creates an OpenRouterClient" do
+      it "creates an OpenAIClient" do
         client = described_class.create(config)
-        expect(client).to be_a(OpenRouterClient)
+        expect(client).to be_a(OpenAIClient)
       end
     end
 

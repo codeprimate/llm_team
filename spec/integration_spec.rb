@@ -30,6 +30,33 @@ RSpec.describe "LLM Client Provider Integration" do
     end
   end
 
+  describe "OpenAI provider" do
+    let(:config) { test_configuration }
+    let(:client) { LlmTeam::Core::LlmClientFactory.create(config) }
+
+    before do
+      config.llm_provider = :openai
+      config.api_key = "test-key"
+      config.api_base_url = "https://api.openai.com/v1"
+    end
+
+    it "creates the correct client type" do
+      expect(client).to be_a(OpenAIClient)
+    end
+
+    it "can be used by an agent" do
+      # Temporarily override the global configuration
+      original_config = LlmTeam.configuration
+      LlmTeam.instance_variable_set(:@configuration, config)
+
+      agent = LlmTeam::Core::Agent.new("TestAgent")
+      expect(agent.llm_client).to be_a(OpenAIClient)
+
+      # Restore original configuration
+      LlmTeam.instance_variable_set(:@configuration, original_config)
+    end
+  end
+
   describe "Ollama provider" do
     let(:config) { test_configuration }
     let(:client) { LlmTeam::Core::LlmClientFactory.create(config) }

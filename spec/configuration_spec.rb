@@ -194,7 +194,7 @@ RSpec.describe LlmTeam::Configuration do
       ENV["OPENROUTER_API_BASE_URL"] = original_openrouter_base_url
     end
 
-    it "uses OpenRouter default for openai provider" do
+    it "uses OpenAI default for openai provider" do
       original_provider = ENV["LLM_TEAM_PROVIDER"]
       original_base_url = ENV["LLM_TEAM_BASE_URL"]
       original_openrouter_base_url = ENV["OPENROUTER_API_BASE_URL"]
@@ -204,7 +204,7 @@ RSpec.describe LlmTeam::Configuration do
       ENV["OPENROUTER_API_BASE_URL"] = nil
 
       config = described_class.new
-      expect(config.api_base_url).to eq("https://openrouter.ai/api/v1")
+      expect(config.api_base_url).to eq("https://api.openai.com/v1")
 
       # Restore original values
       ENV["LLM_TEAM_PROVIDER"] = original_provider
