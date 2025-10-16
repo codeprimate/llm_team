@@ -5,7 +5,8 @@ require_relative "errors"
 module LlmTeam
   class Configuration
     # API Configuration
-    attr_accessor :api_key, :api_base_url, :model, :max_iterations, :llm_provider
+    attr_accessor :api_key, :api_base_url, :model, :max_iterations
+    attr_reader :llm_provider
 
     # Model Parameters Configuration
     attr_accessor :temperature
@@ -137,12 +138,22 @@ module LlmTeam
       @auxiliary_agents_paths << path unless @auxiliary_agents_paths.include?(path)
     end
 
+    # Set the LLM provider and update the base URL accordingly
+    #
+    # @param provider [Symbol] The LLM provider
+    def llm_provider=(provider)
+      @llm_provider = provider.to_sym
+      # Update base URL when provider changes
+      @api_base_url = default_base_url_for_provider(@llm_provider)
+    end
+
     private
 
     # Get the default base URL for a given provider
     #
     # @param provider [Symbol] The LLM provider
     # @return [String] The default base URL for the provider
+
     def default_base_url_for_provider(provider)
       case provider
       when :openrouter

@@ -130,7 +130,8 @@ RSpec.describe OllamaClient do
           model: "llama3.1",
           messages: [{role: "user", content: "Hello"}],
           temperature: 0.7,
-          stream: false
+          stream: false,
+          tools: [{type: "function", function: {name: "test_tool"}}]
         })
       end
     end

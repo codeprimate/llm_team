@@ -43,7 +43,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
           "id" => "call_123",
           "function" => {
             "name" => "test_function",
-            "arguments" => '{"param1": "value1"}'
+            "arguments" => {"param1" => "value1"}
           }
         }]
       end
@@ -73,14 +73,14 @@ RSpec.describe LlmTeam::Core::ToolRunner do
             "id" => "call_123",
             "function" => {
               "name" => "test_function",
-              "arguments" => '{"param1": "value1"}'
+              "arguments" => {"param1" => "value1"}
             }
           },
           {
             "id" => "call_456",
             "function" => {
               "name" => "test_function",
-              "arguments" => '{"param2": "value2"}'
+              "arguments" => {"param2" => "value2"}
             }
           }
         ]
@@ -107,7 +107,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
           "id" => "call_123",
           "function" => {
             "name" => "nonexistent_function",
-            "arguments" => '{"param1": "value1"}'
+            "arguments" => {"param1" => "value1"}
           }
         }]
       end
@@ -131,18 +131,18 @@ RSpec.describe LlmTeam::Core::ToolRunner do
       end
     end
 
-    context "with invalid JSON arguments" do
+    context "with invalid arguments format" do
       let(:tool_calls) do
         [{
           "id" => "call_123",
           "function" => {
             "name" => "test_function",
-            "arguments" => '{"invalid": json}'
+            "arguments" => "invalid_string"
           }
         }]
       end
 
-      it "returns error ToolResult for invalid JSON" do
+      it "returns error ToolResult for invalid arguments format" do
         results = tool_runner.execute_tool_calls(tool_calls, available_tools)
 
         expect(results.length).to eq(1)
@@ -152,7 +152,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
         expect(result.function_name).to eq("test_function")
         expect(result.tool_call_id).to eq("call_123")
         expect(result.error).to eq(:execution_error)
-        expect(result.message).to include("Failed to parse tool arguments")
+        expect(result.message).to include("Invalid tool arguments format")
       end
     end
 
@@ -173,7 +173,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
           "id" => "call_123",
           "function" => {
             "name" => "failing_function",
-            "arguments" => '{"param1": "value1"}'
+            "arguments" => {"param1" => "value1"}
           }
         }]
       end
@@ -200,7 +200,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
         "id" => "call_123",
         "function" => {
           "name" => "test_function",
-          "arguments" => '{"param1": "value1"}'
+          "arguments" => {"param1" => "value1"}
         }
       }]
 
@@ -229,7 +229,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
         "id" => "call_123",
         "function" => {
           "name" => "long_output_function",
-          "arguments" => '{"param1": "value1"}'
+          "arguments" => {"param1" => "value1"}
         }
       }]
     end
@@ -263,7 +263,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
         "id" => "call_123",
         "function" => {
           "name" => "schema_function",
-          "arguments" => '{"param1": "value1"}'
+          "arguments" => {"param1" => "value1"}
         }
       }]
     end
@@ -335,7 +335,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
             "id" => "call_123",
             "function" => {
               "name" => "fast_function",
-              "arguments" => '{"param1": "value1"}'
+              "arguments" => {"param1" => "value1"}
             }
           }]
         end
@@ -352,14 +352,14 @@ RSpec.describe LlmTeam::Core::ToolRunner do
               "id" => "call_123",
               "function" => {
                 "name" => "fast_function",
-                "arguments" => '{"param1": "value1"}'
+                "arguments" => {"param1" => "value1"}
               }
             },
             {
               "id" => "call_456",
               "function" => {
                 "name" => "slow_function",
-                "arguments" => '{"param2": "value2"}'
+                "arguments" => {"param2" => "value2"}
               }
             }
           ]
@@ -386,14 +386,14 @@ RSpec.describe LlmTeam::Core::ToolRunner do
               "id" => "call_123",
               "function" => {
                 "name" => "fast_function",
-                "arguments" => '{"param1": "value1"}'
+                "arguments" => {"param1" => "value1"}
               }
             },
             {
               "id" => "call_456",
               "function" => {
                 "name" => "slow_function",
-                "arguments" => '{"param2": "value2"}'
+                "arguments" => {"param2" => "value2"}
               }
             }
           ]
@@ -452,7 +452,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
           "id" => "call_timeout",
           "function" => {
             "name" => "timeout_function",
-            "arguments" => '{"param1": "value1"}'
+            "arguments" => {"param1" => "value1"}
           }
         }
       end
@@ -474,7 +474,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
           "id" => "call_error",
           "function" => {
             "name" => "error_function",
-            "arguments" => '{"param1": "value1"}'
+            "arguments" => {"param1" => "value1"}
           }
         }
       end
@@ -498,14 +498,14 @@ RSpec.describe LlmTeam::Core::ToolRunner do
             "id" => "call_123",
             "function" => {
               "name" => "fast_function",
-              "arguments" => '{"param1": "value1"}'
+              "arguments" => {"param1" => "value1"}
             }
           },
           {
             "id" => "call_456",
             "function" => {
               "name" => "slow_function",
-              "arguments" => '{"param2": "value2"}'
+              "arguments" => {"param2" => "value2"}
             }
           }
         ]
@@ -572,14 +572,14 @@ RSpec.describe LlmTeam::Core::ToolRunner do
               "id" => "call_123",
               "function" => {
                 "name" => "fast_function",
-                "arguments" => '{"param1": "value1"}'
+                "arguments" => {"param1" => "value1"}
               }
             },
             {
               "id" => "call_456",
               "function" => {
                 "name" => "failing_function",
-                "arguments" => '{"param2": "value2"}'
+                "arguments" => {"param2" => "value2"}
               }
             }
           ]
@@ -605,7 +605,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
             "id" => "call_123",
             "function" => {
               "name" => "fast_function",
-              "arguments" => '{"param1": "value1"}'
+              "arguments" => {"param1" => "value1"}
             }
           }]
         end
@@ -628,14 +628,14 @@ RSpec.describe LlmTeam::Core::ToolRunner do
               "id" => "call_123",
               "function" => {
                 "name" => "fast_function",
-                "arguments" => '{"param1": "value1"}'
+                "arguments" => {"param1" => "value1"}
               }
             },
             {
               "id" => "call_456",
               "function" => {
                 "name" => "slow_function",
-                "arguments" => '{"param2": "value2"}'
+                "arguments" => {"param2" => "value2"}
               }
             }
           ]

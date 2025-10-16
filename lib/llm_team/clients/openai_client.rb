@@ -20,6 +20,25 @@ class OpenAIClient < LlmTeam::Core::LlmClient
   # @param parameters [Hash] The parameters for the chat completion
   # @return [Hash] Response hash with "choices" and "usage" keys
   def chat(parameters:)
-    @client.chat(parameters: parameters)
+    response = @client.chat(parameters: parameters)
+    transform_tool_call_arguments(response)
+  end
+
+  private
+
+  # Transform tool call arguments from JSON strings to Hash objects
+  #
+  # @param response [Hash] The raw response from OpenAI client
+  # @return [Hash] Response with transformed tool call arguments
+  def transform_tool_call_arguments(response)
+    return response unless response.dig("choices", 0, "message", "tool_calls")
+
+    response["choices"][0]["message"]["tool_calls"].each do |tool_call|
+      if tool_call.dig("function", "arguments").is_a?(String)
+        tool_call["function"]["arguments"] = JSON.parse(tool_call["function"]["arguments"])
+      end
+    end
+
+    response
   end
 end

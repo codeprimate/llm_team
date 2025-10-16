@@ -3,6 +3,7 @@
 require "net/http"
 require "json"
 require "uri"
+require "securerandom"
 
 # Ollama client implementation
 #
@@ -32,14 +33,19 @@ class OllamaClient < LlmTeam::Core::LlmClient
   # @param params [Hash] OpenAI-compatible parameters
   # @return [Hash] Ollama-compatible parameters
   def transform_to_ollama_format(params)
-    {
+    ollama_params = {
       model: params[:model],
       messages: params[:messages],
       temperature: params[:temperature],
       stream: false
-      # Note: Ollama tool calling is handled differently and may not be supported
-      # in all models. For now, we'll skip tool parameters.
     }
+
+    # Include tools if provided (Ollama supports tool calling as of July 2024)
+    if params[:tools] && !params[:tools].empty?
+      ollama_params[:tools] = params[:tools]
+    end
+
+    ollama_params
   end
 
   # Make HTTP request to Ollama API
@@ -76,13 +82,29 @@ class OllamaClient < LlmTeam::Core::LlmClient
   # @param ollama_response [Hash] Raw Ollama response
   # @return [Hash] OpenAI-compatible response
   def transform_to_openai_format(ollama_response)
+    message = {
+      "role" => "assistant",
+      "content" => ollama_response["message"]["content"]
+    }
+
+    # Handle tool calls if present
+    if ollama_response["message"]["tool_calls"]
+      message["tool_calls"] = ollama_response["message"]["tool_calls"].map do |tool_call|
+        {
+          "id" => "call_#{SecureRandom.hex(8)}", # Generate a unique ID
+          "type" => "function",
+          "function" => {
+            "name" => tool_call["function"]["name"],
+            "arguments" => tool_call["function"]["arguments"]
+          }
+        }
+      end
+    end
+
     {
       "choices" => [
         {
-          "message" => {
-            "role" => "assistant",
-            "content" => ollama_response["message"]["content"]
-          }
+          "message" => message
         }
       ],
       "usage" => {

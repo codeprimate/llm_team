@@ -203,15 +203,24 @@ module LlmTeam
         # Increment tool calls counter
         @total_tool_calls += 1
 
-        # Parse arguments from JSON
+        # Convert arguments to symbolized hash
         begin
-          arguments = JSON.parse(arguments_json, symbolize_names: true)
-        rescue JSON::ParserError => e
+          if arguments_json.is_a?(Hash)
+            arguments = arguments_json.transform_keys(&:to_sym)
+          else
+            return ToolResult.error(
+              function_name: function_name,
+              tool_call_id: tool_call_id,
+              error: :execution_error,
+              message: "Invalid tool arguments format: expected Hash, got #{arguments_json.class}"
+            )
+          end
+        rescue => e
           return ToolResult.error(
             function_name: function_name,
             tool_call_id: tool_call_id,
             error: :execution_error,
-            message: "Failed to parse tool arguments: #{e.message}"
+            message: "Failed to process tool arguments: #{e.message}"
           )
         end
 
