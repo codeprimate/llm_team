@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require_relative "llm_client"
+require_relative "llm_client_factory"
+
 module LlmTeam
   module Core
     # Base agent class implementing dual conversation tracking and tool orchestration
@@ -24,10 +27,7 @@ module LlmTeam
         @max_iterations = max_iterations || config.max_iterations
         history_behavior ||= config.default_history_behavior
 
-        @llm_client = OpenAI::Client.new(
-          access_token: config.api_key,
-          uri_base: config.api_base_url
-        )
+        @llm_client = LlmClientFactory.create(config)
 
         @total_tokens_used = 0
         @available_tools = {} # Tool registry: name => agent_instance

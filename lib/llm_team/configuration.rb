@@ -5,7 +5,7 @@ require_relative "errors"
 module LlmTeam
   class Configuration
     # API Configuration
-    attr_accessor :api_key, :api_base_url, :model, :max_iterations
+    attr_accessor :api_key, :api_base_url, :model, :max_iterations, :llm_provider
 
     # Model Parameters Configuration
     attr_accessor :temperature
@@ -31,15 +31,21 @@ module LlmTeam
     DEFAULT_RETRY_DELAY = 1
     DEFAULT_TIMEOUT = 30
     DEFAULT_LOG_LEVEL = :info
-    DEFAULT_API_BASE_URL = "https://openrouter.ai/api/v1"
+    # Provider-specific default base URLs
+    DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+    DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
     DEFAULT_VERBOSE = false
     DEFAULT_QUIET = false
     DEFAULT_MAX_TOOL_CALL_RESPONSE_LENGTH = 32 * 1024
+    DEFAULT_LLM_PROVIDER = :openrouter
 
     def initialize
       # API Configuration
-      @api_key = ENV["OPENROUTER_API_KEY"]
-      @api_base_url = ENV.fetch("OPENROUTER_API_BASE_URL", DEFAULT_API_BASE_URL)
+      @llm_provider = ENV.fetch("LLM_TEAM_PROVIDER", DEFAULT_LLM_PROVIDER.to_s).to_sym
+      @api_key = ENV["LLM_TEAM_API_KEY"] || ENV["OPENROUTER_API_KEY"] # backward compatibility
+      @api_base_url = ENV.fetch("LLM_TEAM_BASE_URL",
+        ENV.fetch("OPENROUTER_API_BASE_URL",
+          default_base_url_for_provider(@llm_provider)))
       @model = ENV.fetch("LLM_TEAM_MODEL", DEFAULT_MODEL)
       @max_iterations = ENV.fetch("LLM_TEAM_MAX_ITERATIONS", DEFAULT_MAX_ITERATIONS.to_s).to_i
 
@@ -69,7 +75,15 @@ module LlmTeam
 
     # Validation
     def validate!
-      raise MissingAPIKeyError, "API key is required. Set OPENROUTER_API_KEY environment variable." if @api_key.nil? || @api_key.empty?
+      # Provider validation
+      unless [:openrouter, :openai, :ollama].include?(@llm_provider)
+        raise ConfigurationError, "Invalid LLM provider: #{@llm_provider}. Must be :openrouter, :openai, or :ollama"
+      end
+
+      # API key validation (optional for some providers like Ollama)
+      if [:openrouter, :openai].include?(@llm_provider) && (@api_key.nil? || @api_key.empty?)
+        raise MissingAPIKeyError, "API key is required for #{@llm_provider} provider. Set LLM_TEAM_API_KEY or OPENROUTER_API_KEY environment variable."
+      end
 
       unless [:none, :last, :full].include?(@default_history_behavior)
         raise ConfigurationError, "Invalid history behavior: #{@default_history_behavior}. Must be :none, :last, or :full"
@@ -95,6 +109,7 @@ module LlmTeam
     # Configuration helpers
     def to_hash
       {
+        llm_provider: @llm_provider,
         api_key: @api_key,
         api_base_url: @api_base_url,
         model: @model,
@@ -119,6 +134,23 @@ module LlmTeam
     def add_auxiliary_agents_path(path)
       @auxiliary_agents_paths ||= []
       @auxiliary_agents_paths << path unless @auxiliary_agents_paths.include?(path)
+    end
+
+    private
+
+    # Get the default base URL for a given provider
+    #
+    # @param provider [Symbol] The LLM provider
+    # @return [String] The default base URL for the provider
+    def default_base_url_for_provider(provider)
+      case provider
+      when :openrouter, :openai
+        DEFAULT_OPENROUTER_BASE_URL
+      when :ollama
+        DEFAULT_OLLAMA_BASE_URL
+      else
+        DEFAULT_OPENROUTER_BASE_URL # fallback to OpenRouter
+      end
     end
   end
 end
