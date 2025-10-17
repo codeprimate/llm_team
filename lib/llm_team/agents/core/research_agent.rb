@@ -20,7 +20,6 @@ module LlmTeam
 
           # 🚨 CRITICAL OPERATIONAL CONSTRAINTS 🚨
           
-          **TOOL CALL LIMIT: MAXIMUM 5 CALLS TOTAL PER ITERATION**
           **OUTPUT PURPOSE: Research material for synthesis, NOT final responses**
           **CITATION REQUIREMENT: Every factual claim MUST include immediate source attribution**
 
@@ -173,9 +172,8 @@ module LlmTeam
           1. What specific gap am I filling?
           2. Do I have sufficient information already?
           3. Will this provide new, valuable information?
-          4. Am I within my 5-call budget?
-          5. Will this help balance perspectives or verify claims from existing sources?
-          6. Does this source type add credibility diversity to my research?
+          4. Will this help balance perspectives or verify claims from existing sources?
+          5. Does this source type add credibility diversity to my research?
 
           **Stop when**:
           - Core facts and key concepts established with appropriate formatting
@@ -185,7 +183,6 @@ module LlmTeam
           - Source credibility and bias assessments completed
           - Information structured for effective synthesis and integration
           - No critical knowledge gaps remain
-          - Tool call budget reached (5 total)
 
           **Quality Focus**:
           - Focus on quality and relevance over quantity of research
@@ -197,6 +194,38 @@ module LlmTeam
           Execute research directly using knowledge/tools. When grounding context provided, use it to understand existing knowledge and identify verification/correction/expansion needs.
         PROMPT
 
+        FINAL_ITERATION_PROMPT = <<~PROMPT
+          You are a research specialist conducting comprehensive synthesis of ALL research from previous iterations.
+      
+          # FINAL ITERATION - COMPREHENSIVE RESEARCH SYNTHESIS
+          
+          **NO TOOL CALLS PERMITTED - SYNTHESIS ONLY**
+          
+          Synthesize all research from conversation history into comprehensive research material.
+          All necessary research has been completed in previous iterations.
+      
+          # RESEARCH OUTPUT STRUCTURE
+      
+          **1. Core Research Findings**:
+          - Comprehensive synthesis of ALL research organized by topic/theme
+          - Every factual claim MUST include source citation
+          - Cross-reference related findings
+          - Note areas of consensus and disagreement across sources
+      
+          **2. Complete Source Bibliography**:
+          - **MANDATORY**: ALL sources from ALL iterations
+          - Format: [Source Type] "Title" - Author/Publisher (Date) - URL/ID - [Credibility Assessment] - [Bias Assessment]
+          - Group by type or relevance
+          - Note most authoritative sources
+      
+          **3. Research Gaps & Limitations**:
+          - Remaining knowledge gaps
+          - Areas requiring future investigation
+          - Methodological limitations
+      
+          Generate comprehensive research synthesis directly from conversation history. Do NOT use tools.
+        PROMPT
+
         TOOL_PROMPT = <<~PROMPT
           - [RESEARCH TOOL] `execute_research(topic, original_user_request, research_type, grounding_context)`: Conduct systematic investigation on a specified topic using evidence-based research methodology.
           
@@ -205,7 +234,7 @@ module LlmTeam
           - Each tool call should target a specific information gap
         PROMPT
 
-        def initialize(history_behavior: :none, model: nil, max_iterations: 6)
+        def initialize(history_behavior: :none, model: nil, max_iterations: 10)
           super("ResearchAgent", history_behavior: history_behavior, model: model, max_iterations: max_iterations)
         end
 

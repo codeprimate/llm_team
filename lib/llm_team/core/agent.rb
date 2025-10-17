@@ -45,9 +45,19 @@ module LlmTeam
         load_auxiliary_agents
       end
 
-      # Dynamic system prompt resolution - subclasses can define SYSTEM_PROMPT constant
+      # Dynamic system prompt resolution - subclasses can define SYSTEM_PROMPT and FINAL_ITERATION_PROMPT constants
+      #
+      # Non-obvious behavior:
+      # - Uses FINAL_ITERATION_PROMPT instead of SYSTEM_PROMPT on the final iteration if defined
+      # - Falls back to SYSTEM_PROMPT if FINAL_ITERATION_PROMPT is not defined
       def system_prompt
-        base_prompt = self.class.const_defined?(:SYSTEM_PROMPT) ? self.class::SYSTEM_PROMPT : nil
+        # Check if we're on the final iteration and FINAL_ITERATION_PROMPT is defined
+        base_prompt = if @current_iteration && @current_iteration == @max_iterations && self.class.const_defined?(:FINAL_ITERATION_PROMPT)
+          self.class::FINAL_ITERATION_PROMPT
+        else
+          self.class.const_defined?(:SYSTEM_PROMPT) ? self.class::SYSTEM_PROMPT : nil
+        end
+
         return base_prompt unless @current_iteration
 
         # Prepend combined header when current_iteration is set

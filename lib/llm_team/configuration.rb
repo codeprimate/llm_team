@@ -38,7 +38,7 @@ module LlmTeam
     DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
     DEFAULT_VERBOSE = false
     DEFAULT_QUIET = false
-    DEFAULT_MAX_TOOL_CALL_RESPONSE_LENGTH = 32 * 1024
+    DEFAULT_MAX_TOOL_CALL_RESPONSE_LENGTH = 512 * 1024  # 512KB
     DEFAULT_LLM_PROVIDER = :openrouter
 
     def initialize
