@@ -327,6 +327,14 @@ module LlmTeam
 
         LlmTeam::Output.puts("Latency: #{format_latency(latency_ms)} | Total: #{format_latency(@total_latency_ms)} (#{@llm_calls_count} calls)", type: :performance)
 
+        # Check for error responses (e.g., {"error": {...}})
+        if response["error"]
+          error_msg = response.dig("error", "message") || "Unknown API error"
+          error_code = response.dig("error", "code")
+          LlmTeam::Output.puts("LLM API Error: #{error_code} - #{error_msg}", type: :error)
+          return nil
+        end
+
         track_token_usage(response)
         response
       end

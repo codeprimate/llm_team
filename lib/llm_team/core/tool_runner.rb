@@ -204,17 +204,29 @@ module LlmTeam
         @total_tool_calls += 1
 
         # Convert arguments to symbolized hash
+        # Handle both Hash (from successful client transformation) and String (fallback)
         begin
-          if arguments_json.is_a?(Hash)
-            arguments = arguments_json.transform_keys(&:to_sym)
+          arguments = case arguments_json
+          when Hash
+            arguments_json.transform_keys(&:to_sym)
+          when String
+            # Fallback for when client couldn't parse JSON
+            JSON.parse(arguments_json, symbolize_names: true)
           else
             return ToolResult.error(
               function_name: function_name,
               tool_call_id: tool_call_id,
               error: :execution_error,
-              message: "Invalid tool arguments format: expected Hash, got #{arguments_json.class}"
+              message: "Invalid tool arguments format: expected Hash or String, got #{arguments_json.class}"
             )
           end
+        rescue JSON::ParserError => e
+          return ToolResult.error(
+            function_name: function_name,
+            tool_call_id: tool_call_id,
+            error: :execution_error,
+            message: "Failed to parse tool arguments JSON: #{e.message}"
+          )
         rescue => e
           return ToolResult.error(
             function_name: function_name,

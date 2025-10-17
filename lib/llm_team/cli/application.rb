@@ -206,7 +206,7 @@ module LlmTeam
         begin
           loop do
             print "> "
-            line = STDIN.gets
+            line = $stdin.gets
             break if line.nil? # Ctrl+D pressed
 
             lines << line.chomp

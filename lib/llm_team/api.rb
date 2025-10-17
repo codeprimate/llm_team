@@ -40,8 +40,6 @@ module LlmTeam
       get_auxiliary_agent_tool_names.include?(tool_name)
     end
 
-    private
-
     # Get auxiliary agent tool names using shared discovery logic
     #
     # @return [Array<Symbol>] Array of auxiliary agent tool names

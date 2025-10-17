@@ -113,8 +113,6 @@ module LlmTeam
       false
     end
 
-    private
-
     # Find the base path for a given file by matching against configured paths
     #
     # @param file [String] The file path

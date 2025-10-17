@@ -26,7 +26,7 @@ RSpec.describe OpenAIClient do
   end
 
   describe "#chat" do
-    let(:parameters) { { model: "gpt-4", messages: [{ role: "user", content: "Hello" }] } }
+    let(:parameters) { {model: "gpt-4", messages: [{role: "user", content: "Hello"}]} }
     let(:expected_response) do
       {
         "choices" => [

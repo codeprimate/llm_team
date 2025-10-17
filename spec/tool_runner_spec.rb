@@ -142,7 +142,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
         }]
       end
 
-      it "returns error ToolResult for invalid arguments format" do
+      it "returns error ToolResult for invalid JSON arguments" do
         results = tool_runner.execute_tool_calls(tool_calls, available_tools)
 
         expect(results.length).to eq(1)
@@ -152,7 +152,7 @@ RSpec.describe LlmTeam::Core::ToolRunner do
         expect(result.function_name).to eq("test_function")
         expect(result.tool_call_id).to eq("call_123")
         expect(result.error).to eq(:execution_error)
-        expect(result.message).to include("Invalid tool arguments format")
+        expect(result.message).to include("Failed to parse tool arguments JSON")
       end
     end
 
